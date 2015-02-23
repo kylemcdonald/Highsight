@@ -16,3 +16,13 @@ Motors are [NW, NE, SE, SW] in that order
 	float swSpeed
 	
 ```
+
+## Motors to server
+
+### status report, sent frequently:
+```
+/motor
+	int id			# 0=NW, 1=NE, etc
+	float position	# in cm
+	float speed		# in cm/sec
+```
