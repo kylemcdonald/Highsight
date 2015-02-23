@@ -1,0 +1,17 @@
+<xml>
+    <cable>
+        <length> <!-- cm -->
+            <default>300</default>
+            <min>100</min>
+            <max>600</max>
+        </length>
+        <speed> <!-- cm / s -->
+            <max>100</max>
+        </speed>
+    </cable>
+    <osc>
+        <host>localhost</host>
+        <sendPort>12001</sendPort>
+        <receivePort>1200</receivePort>
+    </osc>
+</xml>
