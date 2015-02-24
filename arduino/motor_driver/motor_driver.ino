@@ -22,12 +22,14 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
+// EEPROM library
+#include <EEPROM.h>
+
 
 // IMPORTANT SETTINGS ----------------------------
 
 // network:
 const int LOCALNET = 2; // 2 for osx internet sharing 192.168.2.*, 1 for NYCR network 192.168.1.*
-const int MYSERIALNUMBER = 0; // 0=NW, 1=NE, 2=SE, 3=SW - also used to generate IP and MAC addresses
 
 // physical:
 const float WHEEL_RADIUS = (2.0 + 0.125) * 2.54; // 2 inch wheel + 1/8" grommet, in cm
@@ -37,8 +39,11 @@ const float WHEEL_RADIUS = (2.0 + 0.125) * 2.54; // 2 inch wheel + 1/8" grommet,
 
 // NETWORK SETUP  -------
 
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, MYSERIALNUMBER };
-IPAddress listeningIP(192,168,LOCALNET,42+MYSERIALNUMBER); // you need to set this
+// get motor id (0 for NW motor, 1 for NE, 2 for SE, 3 for SW) from EEPROM address 0
+int MOTOR_ID = EEPROM.read(0);
+
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, MOTOR_ID };
+IPAddress listeningIP(192,168,LOCALNET,42+MOTOR_ID); // you need to set this
 
 unsigned int listeningPort = 12001;      // local port to listen on
 
@@ -130,7 +135,7 @@ void loop() {
   if (now - updateTime > 100000) {
     OscMessage msg("/motor");
 
-    msg.add(MYSERIALNUMBER);
+    msg.add(MOTOR_ID);
     msg.add((float)stepperpos * CM_PER_STEP); 
     msg.add(currentSpeed);
     
@@ -159,7 +164,7 @@ void oscEvent(OscMessage &m) {
 
 void oscSpeed(OscMessage &m) {
   // /motors/nwLength, nwSpeed, neLength, neSpeed, seLength, seSpeed, swLength, swSpeed
-  float value = m.getFloat(2 * MYSERIALNUMBER + 1);
+  float value = m.getFloat(2 * MOTOR_ID + 1);
   goalSpeed = value;
 }
 
