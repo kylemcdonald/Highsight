@@ -33,7 +33,7 @@ const int LOCALNET = 2; // 2 for osx internet sharing 192.168.2.*, 1 for NYCR ne
 
 // physical:
 const float WHEEL_RADIUS = (2.0 + 0.125) * 2.54; // 2 inch wheel + 1/8" grommet, in cm
-
+const float MAX_POSITION = 51.0; // in cm
 
 
 
@@ -119,6 +119,8 @@ void setup() {
   Timer1.start();
   
   Timer1.attachInterrupt(countSteps);
+  
+  //Serial.begin(9600);
 }
 
 void loop() {
@@ -144,12 +146,11 @@ void loop() {
     // reset the timer
     updateTime = now;
     
-    // local debug -- you can get rid of this
-    //Serial.println("send one");
   } // end if
   
   updateSpeed(elapsed);
   checkLimitSwitch();
+  checkPositionLimits();
   
   // check for incoming messages 
   etherOSC.listen();
@@ -190,8 +191,20 @@ void updateSpeed(unsigned long elapsedMicros) {
 void checkLimitSwitch() {
   int hardLimit = digitalRead(HARDLIMITPIN);
   if (hardLimit==1) {
-    go(0);
-    goalSpeed = 0;
+    if (currentSpeed > 0) {
+      go(0);
+      goalSpeed = 0;
+    }
+    stepperpos = 0;
+  }
+}
+
+void checkPositionLimits() {
+  if (stepperpos >= MAX_POSITION * STEPS_PER_CM) {
+    if (currentSpeed < 0) {
+      go(0);
+      goalSpeed = 0;
+    }
   }
 }
 
@@ -207,12 +220,13 @@ unsigned long go(float cps) {
   }
   if (cps < 0) {
     cps = -cps;
-    digitalWrite(DIRPIN, 1);
-    dir = 1;
-  } else {
-    digitalWrite(DIRPIN, 0);
     dir = 0;
+  } else {
+    dir = 1;
   }    
+  
+  digitalWrite(DIRPIN, dir);
+  
   period = 1000000.0 / cps / STEPS_PER_CM;
   // try to get duty period to be about 50 us
   unsigned long duty = (1024.0 * 50.0) / period;
