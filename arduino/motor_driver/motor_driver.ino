@@ -53,6 +53,9 @@ volatile long encoder0Pos = 0;
 volatile long encoder0Zero = 0;
 volatile long encoder0ZeroState = 0;
 
+// ENDSTOP SETUP ---------------------------
+const int EXTENSIONENDSTOPPIN = 5; // endstop for max extension, wired Normally Closed
+
 
 // MOTOR DRIVER SETUP ---------------------------
 // stepper driver pins on ARDUINO ETHERNET 
@@ -74,6 +77,10 @@ float MAX_ACCEL = 500.0; // in approx cm/sec^2
 float MAX_SPEED = 30.0; // in approx cm/sec
 
 double goalSpeed = 0;
+float homingSpeed = 3.0;
+
+const int BACKOFF_STEPS = 600; // how many encoder steps to reverse out of endstop (so Zero is this far from the switch)
+
 
 // MOTOR TIMING/POS
 volatile long stepperpos = 0;
@@ -103,6 +110,18 @@ OscUDP etherOSC;
 
 
 
+// SYSTEM STATE
+enum stateEnum {
+  NOTHOMED,         // don't know actual position
+  HOMING,           // currently seeking home
+  HOMINGBACKOFF,    // found home switch, backing off a bit
+  HOMINGERROR,      // couldn't find home for some reason
+  OK,               // all is well, ready for motion commands
+  STOPPED,          // stopped by /stop command
+  ENDSTOP,          // unexpectedly hit the end stop, need to home again
+  MOTOROFF          // motor off by /disable command, need to home again
+} state = NOTHOMED;
+
 
 
 
@@ -111,6 +130,7 @@ void setup() {
   setupEthernet();
   setupEncoder();
   setupMotorDriver(); 
+  setupEndstops();
   setupPID();
  
   //Serial.begin (115200);
@@ -123,17 +143,55 @@ long laststepperpos = 0, lastencoder0Pos = 0;
 int printcounter = 0;
 
 void loop(){ 
-  // PID loop
-  pidInput = encoder0Pos;
-  if (abs(pidInput-pidSetpoint) < CLOSE_ENOUGH) {
-    goalSpeed = 0;
+  if (state==OK) {
+    // PID loop
+    pidInput = encoder0Pos;
+    if (abs(pidInput-pidSetpoint) < CLOSE_ENOUGH) {
+      goalSpeed = 0;
+    }
+    else {
+      myPID.Compute();
+      goalSpeed = pidOutput;
+    }
+      
   }
-  else {
-    myPID.Compute();
-    goalSpeed = pidOutput;
+  
+  
+  int endstop = digitalRead(EXTENSIONENDSTOPPIN);
+  
+  if (state==HOMING) {
+    goalSpeed = homingSpeed;
   }
+  
+  else if (state==HOMINGBACKOFF) {
+    goalSpeed = -homingSpeed;
+    go(goalSpeed);
     
-  // update speed taking acceleration limit into account
+    if (encoder0Pos > 0) {
+      goalSpeed = 0;
+      pidSetpoint = encoder0Pos;
+      state = OK;
+    }
+  }
+
+  // check end stop
+  if (endstop) {
+    if (state==HOMING) {
+      state=HOMINGBACKOFF;
+      encoder0Pos = -BACKOFF_STEPS;
+      return;
+    }
+    else if (state==HOMINGBACKOFF) {
+      return;
+    }
+    else state=ENDSTOP;
+    
+    goalSpeed = 0;
+    
+  }
+  
+  
+  // update speed from goalspeed taking acceleration limit into account
   unsigned long dt = micros() - lastmicros;
   lastmicros = micros();
   
@@ -147,8 +205,6 @@ void loop(){
   
   long encoder_steps_this_update = encoder0Pos - lastencoder0Pos;
   lastencoder0Pos = encoder0Pos;
-  
-  
   
   
   
@@ -218,6 +274,12 @@ void setupMotorDriver() {
   
   Timer1.attachInterrupt(countSteps);
 }
+
+void setupEndstops() {
+  // endstop switch is NC and wired to ground, so switch activation will make input HIGH
+  pinMode(EXTENSIONENDSTOPPIN, INPUT_PULLUP); 
+}
+
 
 
 // MOTOR HANDLERS ----------------------------------------
@@ -342,7 +404,29 @@ void sendOscStatus(long stepper, long encoder) {
   OscMessage msg("/status");
  
   msg.add(MOTOR_ID);
-  msg.add("OK");
+  
+  switch(state) {
+    case NOTHOMED:  
+      msg.add("NOTHOMED");
+      break;
+    case HOMING:
+      msg.add("HOMING");
+      break;    
+    case HOMINGBACKOFF:
+      msg.add("HOMINGBACKOFF");
+      break;
+    case ENDSTOP:  
+      msg.add("ENDSTOP");
+      break;
+    case OK:  
+      msg.add("OK");
+      break;
+      
+    default:  
+       msg.add("UNKNOWN");
+       break;
+  }
+  
   msg.add((float)encoder0Pos); 
   msg.add(currentSpeed);
   msg.add(stepper);
@@ -353,14 +437,25 @@ void sendOscStatus(long stepper, long encoder) {
 
 void oscEvent(OscMessage &m) { 
   m.plug("/go", oscGo); 
+  m.plug("/home", oscHome);
   m.plug("/maxspeed", oscSetMaxSpeed); 
 }
 
 
 void oscGo(OscMessage &m) {
   // /go/nwPos,nePos,sePos,swPos long ints
+  if (state != OK) return; 
+  
   int value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
+}
+
+void oscHome(OscMessage &m) {
+  int motor = m.getInt(0);
+  if (motor==MOTOR_ID && state!=HOMING) {
+    state = HOMING;
+    homingSpeed = m.getFloat(1);
+  }
 }
 
 void oscSetMaxSpeed(OscMessage &m) {

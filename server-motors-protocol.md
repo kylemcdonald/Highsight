@@ -15,6 +15,21 @@ Position is in encoder steps (approx 150 steps per cm) and calibration will be h
 	float swLength
 ```
 
+### request one motor to find its home position
+Best to use a nice slow speed. If you think the motor is already pretty well homed and just want to confirm quickly, 
+you can send it quickly to a position near home and then home it slowly.
+
+Motor will report its state as HOMING or HOMINGBACKOFF until homing is complete.  
+
+TODO: if homing seems to take longer than a reasonable time, state should go to HOMINGERROR
+
+```
+/home
+	int motorID
+	float speed
+```
+
+
 ### set one motor's maximum speed (in approx. cm/sec)
 ```
 /maxspeed
