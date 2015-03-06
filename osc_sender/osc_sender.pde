@@ -41,7 +41,7 @@ public void HOME(int val) {
   
   OscMessage myMessage = new OscMessage("/home");
   myMessage.add(0); // motor 0
-  myMessage.add(3.0);  // speed must be float!
+  myMessage.add(12.0);  // speed must be float!
   oscP5.send(myMessage, myRemoteLocation);
   
 }

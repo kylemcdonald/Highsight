@@ -26,7 +26,7 @@ TODO: if homing seems to take longer than a reasonable time, state should go to 
 ```
 /home
 	int motorID
-	float speed
+	float speed	  # 10-12cm/sec is ok in small scale testing
 ```
 
 
