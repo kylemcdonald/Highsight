@@ -327,7 +327,7 @@ void sendOscStatus() {
  
   msg.add(MOTOR_ID);
   msg.add("OK");
-  msg.add(encoder0Pos); 
+  msg.add((float)encoder0Pos); 
   msg.add(currentSpeed);
   
   etherOSC.send(msg, destination);
@@ -341,7 +341,7 @@ void oscEvent(OscMessage &m) {
 
 void oscGo(OscMessage &m) {
   // /go/nwPos,nePos,sePos,swPos long ints
-  int value = m.getInt(MOTOR_ID);
+  int value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
 }
 

@@ -9,10 +9,10 @@ Motors are [NW, NE, SE, SW] in that order, or numbered 0,1,2,3
 Position is in encoder steps (approx 150 steps per cm) and calibration will be handled on the server.
 ```
 /go
-	int nwLength	# goal rope length in encoder steps
-	int neLength
-	int seLength
-	int swLength
+	float nwLength	# goal rope length in encoder steps
+	float neLength
+	float seLength
+	float swLength
 ```
 
 ### set one motor's maximum speed (in approx. cm/sec)
@@ -30,7 +30,7 @@ Position is in encoder steps (approx 150 steps per cm) and calibration will be h
 /status
 	int motorID
 	string state	# OK (not yet implemented: NOTHOMED, HOMING, STOPPED, or ENDSTOP)
-	int position	# in encoder steps
+	float position	# in encoder steps
 	float velocity	# in approximate cm/sec
 	
 
