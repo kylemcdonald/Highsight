@@ -119,9 +119,11 @@ void setup() {
 
 
 unsigned long lastmicros = micros();
+long laststepperpos = 0, lastencoder0Pos = 0;
 int printcounter = 0;
 
 void loop(){ 
+  // PID loop
   pidInput = encoder0Pos;
   if (abs(pidInput-pidSetpoint) < CLOSE_ENOUGH) {
     goalSpeed = 0;
@@ -131,19 +133,33 @@ void loop(){
     goalSpeed = pidOutput;
   }
     
-  
+  // update speed taking acceleration limit into account
   unsigned long dt = micros() - lastmicros;
   lastmicros = micros();
   
   updateSpeed(dt);
   
   
+  
+  // check for slip
+  long stepper_steps_this_update = stepperpos - laststepperpos;
+  laststepperpos = stepperpos;
+  
+  long encoder_steps_this_update = encoder0Pos - lastencoder0Pos;
+  lastencoder0Pos = encoder0Pos;
+  
+  
+  
+  
+  
+  
   // check for incoming messages 
   etherOSC.listen();
   
   
+  // send updates 
   if (printcounter==0) {
-    sendOscStatus();
+    sendOscStatus(stepper_steps_this_update, encoder_steps_this_update);
   }
   if (printcounter++ > 100) printcounter = 0;
   
@@ -200,7 +216,7 @@ void setupMotorDriver() {
   Timer1.pwm(PULSEPIN, 0);
   Timer1.start();
   
-  //Timer1.attachInterrupt(countSteps);
+  Timer1.attachInterrupt(countSteps);
 }
 
 
@@ -322,13 +338,15 @@ void doEncoderB(){
 
 // send status message
 
-void sendOscStatus() {
+void sendOscStatus(long stepper, long encoder) {
   OscMessage msg("/status");
  
   msg.add(MOTOR_ID);
   msg.add("OK");
   msg.add((float)encoder0Pos); 
   msg.add(currentSpeed);
+  msg.add(stepper);
+  msg.add(encoder);
   
   etherOSC.send(msg, destination);
 }
