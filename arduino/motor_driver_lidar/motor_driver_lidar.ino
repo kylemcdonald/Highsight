@@ -7,6 +7,12 @@
 
 // LIBRARIES -----------------------------------
 
+// LIDARduino library
+// https://github.com/stuthedew/LIDARduino
+#include <I2C.h>
+#include <LIDARduino.h>
+#include <LIDARLite_registers.h>
+
 
 // David Bouchard's arduino-osc library
 // http://www.deadpixel.ca/arduino-osc/
@@ -92,11 +98,22 @@ const int ENAPIN = 7;  // white
 const int HARDLIMITPIN = 6; // active low
 
 
+// LIDAR-LITE SETUP ------
+LIDAR_Lite_I2C lidar;
 
+
+// position feedback
+int last_lidar_estimate = 0;
+float last_stepper_estimate = 0;
+float last_joint_estimate = 0;
 
 
 
 void setup() {
+  // LIDAR-Lite setup
+  lidar.begin();
+  
+  // ETHERNET setup
   Ethernet.begin(mac,listeningIP);
   UDP.begin(listeningPort);
   etherOSC.begin(UDP);
@@ -132,13 +149,18 @@ void loop() {
   unsigned long elapsed = now - lastLoopTime;
   if (elapsed==0) return;
   
+  
+  float stepper_in_cm = stepperpos * CM_PER_STEP;
+  float delta_stepper_in_cm = stepper_in_cm - last_stepper_estimate;
+  last_stepper_estimate = stepper_in_cm;
+  
   lastLoopTime = now;
   
   if (now - updateTime > 100000) {
     OscMessage msg("/motor");
 
     msg.add(MOTOR_ID);
-    msg.add((float)stepperpos * CM_PER_STEP); 
+    msg.add(stepper_in_cm); 
     msg.add(currentSpeed);
     
     etherOSC.send(msg, destination);
@@ -155,6 +177,30 @@ void loop() {
   // check for incoming messages 
   etherOSC.listen();
 
+  // update lidar
+  int lidar_in_cm = lidar.easyDistance();
+  int delta_lidar_in_cm = last_lidar_estimate - lidar_in_cm;
+  last_lidar_estimate = lidar_in_cm;
+  
+  
+  float stepper_cm_per_second = delta_stepper_in_cm * 1000000.0 / elapsed;
+  
+  float kalmanEstimate = kalmanCalculate(lidar_in_cm, stepper_cm_per_second, elapsed / 1000);
+  float compEstimate1 = Complementary(lidar_in_cm, stepper_cm_per_second, elapsed / 1000);
+  float compEstimate2 = Complementary2(lidar_in_cm, stepper_cm_per_second, elapsed / 1000);
+  
+  {
+    OscMessage msg("/lidar");
+    msg.add(MOTOR_ID);
+    msg.add(lidar_in_cm);
+    msg.add(kalmanEstimate);
+    msg.add(compEstimate1);
+    msg.add(compEstimate2);
+    etherOSC.send(msg, destination);
+  }
+  
+  
+  
 }
 
 
@@ -243,3 +289,20 @@ void countSteps() {
   if (dir) stepperpos--;
   else stepperpos++;
 }
+
+
+
+// kalman from http://robottini.altervista.org/kalman-filter-vs-complementary-filter
+float x_angle=0;
+float x_angleC=0;
+float x_angleRG=0;
+float  x_angleRA=0;
+float x_angle2C=0;
+
+int val_gyro = 0;                    //value of individual accelerometer or gyroscope sensor
+float accZ=0;
+float accY=0;
+float x1=0;
+float y1=0;
+float x2=0;
+float y2=0;
