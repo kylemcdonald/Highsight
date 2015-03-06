@@ -22,7 +22,13 @@ Motors are [NW, NE, SE, SW] in that order
 ### status report, sent frequently:
 ```
 /motor
-	int id			# 0=NW, 1=NE, etc
+	int id			# motor ID 0=NW, 1=NE, etc
 	float position	# in cm
 	float speed		# in cm/sec
 ```
+
+### hard stop report
+Hit the hard stop.
+```
+/hardstop
+	int id			# motor ID
