@@ -1,34 +1,38 @@
 # OSC messages between server and motor controllers
 
-Motors are [NW, NE, SE, SW] in that order
+Motors are [NW, NE, SE, SW] in that order, or numbered 0,1,2,3
 
 ## Server to motors (broadcast):
 
+
+### send all 4 motors to set positions (motors handle velocity and acceleration)
+Position is in encoder steps (approx 150 steps per cm) and calibration will be handled on the server.
 ```
-/motors
-	float nwLength	# goal cable length in cm
-	float nwSpeed	# goal cable speed in cm/sec
-	float neLength
-	float neSpeed
-	float seLength
-	float seSpeed
-	float swLength
-	float swSpeed
-	
+/go
+	int nwLength	# goal rope length in encoder steps
+	int neLength
+	int seLength
+	int swLength
 ```
+
+### set one motor's maximum speed (in approx. cm/sec)
+```
+/maxspeed
+	int motorID
+	float maxSpeed
+```
+
 
 ## Motors to server
 
 ### status report, sent frequently:
 ```
-/motor
-	int id			# motor ID 0=NW, 1=NE, etc
-	float position	# in cm
-	float speed		# in cm/sec
-```
+/status
+	int motorID
+	string state	# OK (not yet implemented: NOTHOMED, HOMING, STOPPED, or ENDSTOP)
+	int position	# in encoder steps
+	float velocity	# in approximate cm/sec
+	
 
-### hard stop report
-Hit the hard stop.
-```
-/hardstop
-	int id			# motor ID
+	
+	

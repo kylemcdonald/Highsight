@@ -1,11 +1,18 @@
-/* motor driver for Highsight
-   Joint commission for STRP 2015 and Cinekid 2015, by Kyle McDonald and Ranjit Bhatnagar
 
-   Communicates with server with OSC over UDP.
-*/
+// quadrature encoder example with dual interrupts
+//
+// modified from http://playground.arduino.cc/Main/RotaryEncoders#Example3
+// (changed position variable to signed long)
+
+// TimerOne library from pjrc
+// http://www.pjrc.com/teensy/td_libs_TimerOne.html
+#include <TimerOne.h>
 
 
-// LIBRARIES -----------------------------------
+// PID_v1 library
+// https://github.com/br3ttb/Arduino-PID-Library/
+// http://playground.arduino.cc/Code/PIDLibrary
+#include <PID_v1.h>
 
 
 // David Bouchard's arduino-osc library
@@ -13,9 +20,7 @@
 // https://github.com/davidbouchard/arduino-osc
 #include <OscUDP.h>
 
-// TimerOne library from pjrc
-// http://www.pjrc.com/teensy/td_libs_TimerOne.html
-#include <TimerOne.h>
+
 
 // Ethernet libraries
 #include <SPI.h>        
@@ -31,9 +36,50 @@
 // network:
 const int LOCALNET = 2; // 2 for osx internet sharing 192.168.2.*, 1 for NYCR network 192.168.1.*
 
-// physical:
+
+// PID SETUP --------------------------
+double pidSetpoint, pidInput, pidOutput;
+const double consKp=0.08, consKi=0.012, consKd=0.00001;
+PID myPID(&pidInput, &pidOutput, &pidSetpoint, consKp, consKi, consKd, REVERSE); // DIRECT or REVERSE
+const int CLOSE_ENOUGH = 15; // stop motor if within +/- desired position in encoder steps
+
+
+// ENCODER SETUP ---------------------------
+// encoder on 2 and 3
+const int encoder0PinA = 2;
+const int encoder0PinB = 3;
+const int encoder0PinZ = 4;
+volatile long encoder0Pos = 0;
+volatile long encoder0Zero = 0;
+volatile long encoder0ZeroState = 0;
+
+
+// MOTOR DRIVER SETUP ---------------------------
+// stepper driver pins on ARDUINO ETHERNET 
+const int PULSEPIN = 9; // yellow
+const int DIRPIN = 8;  // green
+const int ENAPIN = 7;  // white
+
+
+// MOTOR SETUP -------
 const float WHEEL_RADIUS = (2.0 + 0.125) * 2.54; // 2 inch wheel + 1/8" grommet, in cm
-const float MAX_POSITION = 51.0; // in cm
+
+const float CM_PER_REV = TWO_PI * WHEEL_RADIUS;
+const int STEPS_PER_REV = 1600;
+const float CM_PER_STEP = CM_PER_REV / STEPS_PER_REV;
+const float STEPS_PER_CM = STEPS_PER_REV / CM_PER_REV;
+
+float MAX_ACCEL = 500.0; // in approx cm/sec^2
+
+float MAX_SPEED = 30.0; // in approx cm/sec
+
+double goalSpeed = 0;
+
+// MOTOR TIMING/POS
+volatile long stepperpos = 0;
+volatile int dir = 0;
+volatile unsigned long period;
+double currentSpeed = 0;
 
 
 
@@ -49,7 +95,7 @@ unsigned int listeningPort = 12001;      // local port to listen on
 
 NetAddress destination;
 //IPAddress destinationIP( 255,255,255,255 ); // 255... is broadcast address according to http://forum.arduino.cc/index.php?topic=164119.0
-IPAddress destinationIP( 192,168,LOCALNET,255 ); // this is broadcast address when using osx internet sharing, according to ipconfig listing for bridge100
+IPAddress destinationIP( 192,168,LOCALNET,255 ); // this is broadcast address when using osx internet sharing, according to ifconfig listing for bridge100
 int destinationPort = 12000;
 
 EthernetUDP UDP;
@@ -58,55 +104,91 @@ OscUDP etherOSC;
 
 
 
-// MOTOR SETUP -------
-
-const float CM_PER_REV = TWO_PI * WHEEL_RADIUS;
-const int STEPS_PER_REV = 1600;
-const float CM_PER_STEP = CM_PER_REV / STEPS_PER_REV;
-const float STEPS_PER_CM = STEPS_PER_REV / CM_PER_REV;
-
-const float MAX_ACCEL = 60.0; // in cm/sec^2
-
-double goalSpeed = 0;
-
-
-// can i track steps?
-volatile long stepperpos = 0;
-volatile int dir = 0;
-volatile unsigned long period;
-double currentSpeed = 0;
-
-// timer for sending current position
-unsigned long lastLoopTime = 0;
-unsigned long updateTime = 0;
-
-
-// MOTOR DRIVER SETUP ------------
-
-// stepper driver pins on ARDUINO ETHERNET 
-const int PULSEPIN = 9; // yellow
-const int DIRPIN = 8;  // green
-const int ENAPIN = 7;  // white
-
-// limit switches
-const int HARDLIMITPIN = 6; // active low
-
-
-
 
 
 
 void setup() {
+  setupEthernet();
+  setupEncoder();
+  setupMotorDriver(); 
+  setupPID();
+ 
+  //Serial.begin (115200);
+}
+
+
+
+unsigned long lastmicros = micros();
+int printcounter = 0;
+
+void loop(){ 
+  pidInput = encoder0Pos;
+  if (abs(pidInput-pidSetpoint) < CLOSE_ENOUGH) {
+    goalSpeed = 0;
+  }
+  else {
+    myPID.Compute();
+    goalSpeed = pidOutput;
+  }
+    
+  
+  unsigned long dt = micros() - lastmicros;
+  lastmicros = micros();
+  
+  updateSpeed(dt);
+  
+  
+  // check for incoming messages 
+  etherOSC.listen();
+  
+  
+  if (printcounter==0) {
+    sendOscStatus();
+  }
+  if (printcounter++ > 100) printcounter = 0;
+  
+  
+  
+  
+  delay(1);
+}
+
+
+
+
+
+
+void setupEthernet() {
   Ethernet.begin(mac,listeningIP);
   UDP.begin(listeningPort);
   etherOSC.begin(UDP);
   
   destination.set(destinationIP, destinationPort);
-  
-  // STEPPER setup
-  // limit switches
-  pinMode(HARDLIMITPIN, INPUT_PULLUP);  
-  
+}
+
+
+void setupPID() {
+  pidSetpoint = 0;
+  myPID.SetOutputLimits(-MAX_SPEED, MAX_SPEED);
+  myPID.SetSampleTime(20);
+  myPID.SetMode(AUTOMATIC);
+}
+
+void pidSetMaxSpeed(float ms) {
+  myPID.SetOutputLimits(-ms, ms);
+}
+
+void setupEncoder() {
+  pinMode(encoder0PinA, INPUT); 
+  pinMode(encoder0PinB, INPUT); 
+  pinMode(encoder0PinZ, INPUT);
+  // encoder pin on interrupt 0 (pin 2)
+  attachInterrupt(0, doEncoderA, CHANGE);
+  // encoder pin on interrupt 1 (pin 3)
+  attachInterrupt(1, doEncoderB, CHANGE);  
+}
+
+void setupMotorDriver() {
   //pinMode(PULSEPIN, OUTPUT); pwm() will do this
   pinMode(DIRPIN, OUTPUT);
   pinMode(ENAPIN, OUTPUT);
@@ -118,96 +200,22 @@ void setup() {
   Timer1.pwm(PULSEPIN, 0);
   Timer1.start();
   
-  Timer1.attachInterrupt(countSteps);
-  
-  //Serial.begin(9600);
-}
-
-void loop() {
-  // send a message every 100 ms
-  
-  // avoid using delay() since it just blocks everything  
-  // so here is a simple timer that controls how often we send
-  unsigned long now = micros();
-  unsigned long elapsed = now - lastLoopTime;
-  if (elapsed==0) return;
-  
-  lastLoopTime = now;
-  
-  if (now - updateTime > 100000) {
-    OscMessage msg("/motor");
-
-    msg.add(MOTOR_ID);
-    msg.add((float)stepperpos * CM_PER_STEP); 
-    msg.add(currentSpeed);
-    
-    etherOSC.send(msg, destination);
-    
-    // reset the timer
-    updateTime = now;
-    
-  } // end if
-  
-  updateSpeed(elapsed);
-  checkLimitSwitch();
-  checkPositionLimits();
-  
-  // check for incoming messages 
-  etherOSC.listen();
-
+  //Timer1.attachInterrupt(countSteps);
 }
 
 
-void oscEvent(OscMessage &m) { 
-  m.plug("/motors", oscSpeed);  
-}
+// MOTOR HANDLERS ----------------------------------------
 
-
-void oscSpeed(OscMessage &m) {
-  // /motors/nwLength, nwSpeed, neLength, neSpeed, seLength, seSpeed, swLength, swSpeed
-  float value = m.getFloat(2 * MOTOR_ID + 1);
-  goalSpeed = value;
-}
-
-
-void updateSpeed(unsigned long elapsedMicros) {
-  double acceleration = goalSpeed - currentSpeed;
-  double maxAccelThisUpdate = MAX_ACCEL * elapsedMicros / 1000000.0;
-
-  if (acceleration > maxAccelThisUpdate) {
-    acceleration = maxAccelThisUpdate;
-  }
-  else if (acceleration < -maxAccelThisUpdate) {
-    acceleration = -maxAccelThisUpdate;
-  }
+// move actual speed towards goal speed
+// dt is time since last update in microseconds
+void updateSpeed(unsigned long dt) {
+  float requestedDS = goalSpeed - currentSpeed;
+  float maxDS = MAX_ACCEL * dt / 1000000.0;
+  if (requestedDS > maxDS) requestedDS = maxDS;
+  else if (requestedDS < -maxDS) requestedDS = -maxDS;
   
-  //double elapsedSeconds = elapsedMicros / 1000000.0;
-  double accelerationStep = acceleration;
-  currentSpeed += accelerationStep;
-  go(currentSpeed);
+  go(currentSpeed + requestedDS);  
 }
-
-
-void checkLimitSwitch() {
-  int hardLimit = digitalRead(HARDLIMITPIN);
-  if (hardLimit==1) {
-    if (currentSpeed > 0) {
-      go(0);
-      goalSpeed = 0;
-    }
-    stepperpos = 0;
-  }
-}
-
-void checkPositionLimits() {
-  if (stepperpos >= MAX_POSITION * STEPS_PER_CM) {
-    if (currentSpeed < 0) {
-      go(0);
-      goalSpeed = 0;
-    }
-  }
-}
-
 
 // speed in cms per second (negative to go backwards)
 // returns actual period
@@ -243,3 +251,106 @@ void countSteps() {
   if (dir) stepperpos--;
   else stepperpos++;
 }
+
+
+
+
+// ENCODER HANDLERS -----------------------------
+
+
+
+void doEncoderA(){
+
+  // look for a low-to-high on channel A
+  if (digitalRead(encoder0PinA) == HIGH) { 
+    // check channel B to see which way encoder is turning
+    if (digitalRead(encoder0PinB) == LOW) {  
+      encoder0Pos = encoder0Pos + 1;         // CW
+    } 
+    else {
+      encoder0Pos = encoder0Pos - 1;         // CCW
+    }
+  }
+  else   // must be a high-to-low edge on channel A                                       
+  { 
+    // check channel B to see which way encoder is turning  
+    if (digitalRead(encoder0PinB) == HIGH) {   
+      encoder0Pos = encoder0Pos + 1;          // CW
+    } 
+    else {
+      encoder0Pos = encoder0Pos - 1;          // CCW
+    }
+  }
+  
+  // mark Z
+  int zeropin = digitalRead(encoder0PinZ);
+  if (encoder0ZeroState == 0 && zeropin == 1) {
+    encoder0Zero = encoder0Pos;
+  }
+  encoder0ZeroState = zeropin;
+}
+
+void doEncoderB(){
+
+  // look for a low-to-high on channel B
+  if (digitalRead(encoder0PinB) == HIGH) {   
+   // check channel A to see which way encoder is turning
+    if (digitalRead(encoder0PinA) == HIGH) {  
+      encoder0Pos = encoder0Pos + 1;         // CW
+    } 
+    else {
+      encoder0Pos = encoder0Pos - 1;         // CCW
+    }
+  }
+  // Look for a high-to-low on channel B
+  else { 
+    // check channel B to see which way encoder is turning  
+    if (digitalRead(encoder0PinA) == LOW) {   
+      encoder0Pos = encoder0Pos + 1;          // CW
+    } 
+    else {
+      encoder0Pos = encoder0Pos - 1;          // CCW
+    }
+  }
+}
+
+
+
+
+// OSC MESSAGE HANDLERS -----------------------
+
+
+// send status message
+
+void sendOscStatus() {
+  OscMessage msg("/status");
+ 
+  msg.add(MOTOR_ID);
+  msg.add("OK");
+  msg.add(encoder0Pos); 
+  msg.add(currentSpeed);
+  
+  etherOSC.send(msg, destination);
+}
+
+void oscEvent(OscMessage &m) { 
+  m.plug("/go", oscGo); 
+  m.plug("/maxspeed", oscSetMaxSpeed); 
+}
+
+
+void oscGo(OscMessage &m) {
+  // /go/nwPos,nePos,sePos,swPos long ints
+  int value = m.getInt(MOTOR_ID);
+  pidSetpoint = value;
+}
+
+void oscSetMaxSpeed(OscMessage &m) {
+  int motor = m.getInt(0);
+  if (motor==MOTOR_ID) {
+    pidSetMaxSpeed(m.getFloat(1));
+  }
+}
+
+
+
