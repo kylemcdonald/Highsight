@@ -7,13 +7,20 @@ ControlP5 cp5;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 
+int NUM_MOTORS = 4;
+
+float HOMING_SPEED = 12.0;
+float MAX_SPEED = 60.0;
 
 void setup() {
   size(800,600);
   cp5 = new ControlP5(this);
   
-  cp5.addButton("HOME")
+  cp5.addButton("HOME0")
     .setPosition(40,40)
+    .setSize(80,20);
+  cp5.addButton("HOME1")
+    .setPosition(130,40)
     .setSize(80,20);
   
   /* start oscP5, listening for incoming messages at port 12000 */
@@ -23,11 +30,12 @@ void setup() {
   //myRemoteLocation = new NetAddress("192.168.2.42",12001); // direct to motor0
   
   
-  OscMessage myMessage = new OscMessage("/maxspeed");
-  myMessage.add(0); // motor 0
-  myMessage.add(70.0);  // speed must be float!
-  oscP5.send(myMessage, myRemoteLocation);
-  
+  for (int m=0; m<NUM_MOTORS; m++) {
+    OscMessage myMessage = new OscMessage("/maxspeed");
+    myMessage.add(m); // motor 0
+    myMessage.add(MAX_SPEED);  // speed must be float!
+    oscP5.send(myMessage, myRemoteLocation);
+  }
 }
 
 void draw() {
@@ -36,30 +44,40 @@ void draw() {
 
 
 // button handlers
-public void HOME(int val) {
-  println("HOME BUTTON");
-  
+public void HOME0(int val) {
+  println("HOME 0 BUTTON");
+  sendHome(0);
+}  public void HOME1(int val) {
+  println("HOME 1 BUTTON");
+  sendHome(1);
+}  
+
+void sendHome(int motorID) { 
   OscMessage myMessage = new OscMessage("/home");
-  myMessage.add(0); // motor 0
-  myMessage.add(12.0);  // speed must be float!
+  myMessage.add(motorID); // motor 0
+  myMessage.add(HOMING_SPEED);  // speed must be float!
   oscP5.send(myMessage, myRemoteLocation);
   
 }
 
 
 void mousePressed() {
-  sendPos(mouseY*10);
+  sendPos(mouseX*10, mouseY*10);
 }
 
 void mouseDragged() {
-  sendPos(mouseY*10);
+  sendPos(mouseX*10, mouseY*10);
 }
 
-void sendPos(float pos) {
+
+void sendPos(float pos0, float pos1) {
   OscMessage myMessage = new OscMessage("/go");
   //println("Sending /go/" + pos);
-  for (int i=0; i<4; i++) {
-    myMessage.add(pos);
+  myMessage.add(pos0);
+  myMessage.add(pos1);
+  
+  for (int i=2; i<4; i++) {
+    myMessage.add(0);
   }
   oscP5.send(myMessage, myRemoteLocation);
 }

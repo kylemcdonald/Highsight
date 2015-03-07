@@ -54,7 +54,7 @@ volatile long encoder0Zero = 0;
 volatile long encoder0ZeroState = 0;
 
 // ENDSTOP SETUP ---------------------------
-const int EXTENSIONENDSTOPPIN = 5; // endstop for max extension, wired Normally Closed
+const int EXTENSIONENDSTOPPIN = 6; // endstop for max extension, wired Normally Closed
 
 
 // MOTOR DRIVER SETUP ---------------------------
