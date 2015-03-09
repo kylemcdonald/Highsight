@@ -5,7 +5,7 @@
 #include <EEPROM.h>
 
 int addr = 0;
-int MYSERIALNUMBER = 0;
+int MYSERIALNUMBER = 3;
 
 void setup()
 {
