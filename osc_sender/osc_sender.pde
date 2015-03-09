@@ -158,10 +158,10 @@ void mousePressed() {
 
 void mouseDragged() {
   
-  float range = 24; 
+  float range = 32; 
   
   float x = -range/2.0 + (mouseX / 800.0)*range;
-  float y = -range/2.0 + (mouseY / 600.0)*range;
+  float y = -range/2.0 + (1.0 - mouseY / 600.0)*range;
   //float z = 43;
   
   if (x < -range/2) x = -range/2;
