@@ -22,6 +22,12 @@ void setup() {
   cp5.addButton("HOME1")
     .setPosition(130,40)
     .setSize(80,20);
+  cp5.addButton("HOME2")
+    .setPosition(220,40)
+    .setSize(80,20);
+  cp5.addButton("HOME3")
+    .setPosition(310,40)
+    .setSize(80,20);
   
   /* start oscP5, listening for incoming messages at port 12000 */
   oscP5 = new OscP5(this,12000);
@@ -51,6 +57,13 @@ public void HOME0(int val) {
   println("HOME 1 BUTTON");
   sendHome(1);
 }  
+public void HOME2(int val) {
+  println("HOME 2 BUTTON");
+  sendHome(2);
+}  public void HOME3(int val) {
+  println("HOME 3 BUTTON");
+  sendHome(3);
+}  
 
 void sendHome(int motorID) { 
   OscMessage myMessage = new OscMessage("/home");
@@ -73,11 +86,11 @@ void mouseDragged() {
 void sendPos(float pos0, float pos1) {
   OscMessage myMessage = new OscMessage("/go");
   //println("Sending /go/" + pos);
-  myMessage.add(pos0);
-  myMessage.add(pos1);
+ // myMessage.add(pos0);
+  //myMessage.add(pos1);
   
-  for (int i=2; i<4; i++) {
-    myMessage.add(0);
+  for (int i=0; i<4; i++) {
+    myMessage.add(pos1);
   }
   oscP5.send(myMessage, myRemoteLocation);
 }
