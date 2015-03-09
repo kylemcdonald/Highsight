@@ -10,7 +10,8 @@ NetAddress myRemoteLocation;
 int NUM_MOTORS = 4;
 
 float HOMING_SPEED = 12.0;
-float MAX_SPEED = 20.0;
+float MAX_SPEED = 20.0;  // approx cm/sec
+float MAX_ACCEL = 100.0; // approx cm/sec/sec
 
 
 
@@ -106,6 +107,13 @@ void setup() {
     myMessage.add(m); // motor 0
     myMessage.add(MAX_SPEED);  // speed must be float!
     oscP5.send(myMessage, myRemoteLocation);
+    
+    myMessage = new OscMessage("/maxaccel");
+    myMessage.add(m); // motor 0
+    myMessage.add(MAX_ACCEL);  // speed must be float!
+    oscP5.send(myMessage, myRemoteLocation);
+    
+    
   }
 }
 
