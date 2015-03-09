@@ -10,14 +10,68 @@ NetAddress myRemoteLocation;
 int NUM_MOTORS = 4;
 
 float HOMING_SPEED = 12.0;
-float MAX_SPEED = 20.0;  // approx cm/sec
-float MAX_ACCEL = 100.0; // approx cm/sec/sec
+float MAX_SPEED = 30.0;  // approx cm/sec
+float MAX_ACCEL = 150.0; // approx cm/sec/sec
+
+
+// mouse interface
+float mouseRange = 36;
+
+
+// smoothing
+class Smoother {
+  double x=0,y=0,z=52;
+  double goalx=0, goaly=0, goalz=52;
+  double vx=0,vy=0,vz=0;
+  double max_vel = 13.0; // in room units (inches for this test) per second
+  //float max_acc = 50.0; // ditto
+
+  void setPos(double _x, double _y, double _z) {
+    x = _x;
+    y = _y;
+    z = _z;
+  }
+  
+  void setGoal(double _x, double _y, double _z) {
+    goalx = _x;
+    goaly = _y;
+    goalz = _z;
+  }
+  
+  void update(int millis) {
+    double dx = goalx - x;
+    double dy = goaly - y;
+    double dz = goalz - z;
+    
+    double scale = 1.0;
+    double d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    if (d==0) return;
+    
+    
+    double max_dist = max_vel * millis / 1000.0;
+    if (d > max_dist) {
+      scale = max_dist / d;
+    }
+    
+    vx = dx * scale;
+    vy = dy * scale;
+    vz = dz * scale;
+    
+    x += vx;
+    y += vy;
+    z += vz;  
+  }
+  
+  
+
+}
 
 
 
 // origin of room coordinates
 float CENTERPOINT[] = {40, 55, 0}; // on the floor, approx centered between motors
 // table height is about 45, will bump table below z=45
+
 
 class Winchbot {
   int motorID;
@@ -56,6 +110,7 @@ class Winchbot {
     return steps;
   }
   
+  
 }
 
 Winchbot winches[] = new Winchbot[4];
@@ -81,6 +136,7 @@ void setupWinches() {
 
 Textlabel poslabels[] = new Textlabel[4];
 Textlabel statelabels[] = new Textlabel[4];
+Smoother smoother = new Smoother();
 
 void setup() {
   setupWinches();
@@ -117,9 +173,39 @@ void setup() {
   }
 }
 
+
+int last_time = millis();
+
 void draw() {
   //sendPos((int)(1000+2500*sin(millis()/350.0)));
   background(0);
+  fill(255);
+  
+  int dt = millis() - last_time;
+  last_time = millis();
+  
+  //   float x = -range/2.0 + (mouseX / 800.0)*range;
+  //  float y = -range/2.0 + (1.0 - mouseY / 600.0)*range;
+  
+  ellipse((float)(smoother.x+mouseRange/2.0 )* 800.0/mouseRange, (float)(-smoother.y+mouseRange/2.0 )* 600.0/mouseRange, 10, 10);
+  smoother.update(dt);
+  transmitPositions((float)smoother.x, (float)smoother.y, (float)smoother.z);
+}
+
+void transmitPositions(float x, float y, float z) {
+  float positions[] = new float[4];
+  for (int i=0; i<4; i++) {
+    positions[winches[i].motorID] = winches[i].positionToSteps(x,y,z);
+  }
+      
+  
+  println(x, y, z, " -> ", 
+    winches[0].distanceFrom(x,y,z), winches[1].distanceFrom(x,y,z), 
+    winches[2].distanceFrom(x,y,z), winches[3].distanceFrom(x,y,z),
+    " ---> ",
+    positions[0], positions[1], positions[2], positions[3]);
+  
+  sendPos(positions[0], positions[1], positions[2], positions[3]);
 }
 
 
@@ -162,11 +248,12 @@ void keyPressed() {
 
 void mousePressed() {
   mouseDragged();
+
 }
 
 void mouseDragged() {
   
-  float range = 32; 
+  float range = mouseRange; 
   
   float x = -range/2.0 + (mouseX / 800.0)*range;
   float y = -range/2.0 + (1.0 - mouseY / 600.0)*range;
@@ -176,8 +263,12 @@ void mouseDragged() {
   if (x > range/2) x = range/2;
   if (y < -range/2) y = -range/2;
   if (y > range/2) y = range/2;
-  if (z < 42) z = 42;
+  if (z < 36) z = 36;
   if (z > 72) z = 72;
+  
+  smoother.setGoal(x, y, z);
+  
+  /*
   
   float positions[] = new float[4];
   for (int i=0; i<4; i++) {
@@ -194,12 +285,17 @@ void mouseDragged() {
   sendPos(positions[0], positions[1], positions[2], positions[3]);
   
   
+  */
+  
   //sendPos(400,400,400,mouseY*100);
   
 }
 
 
-void sendPos(float pos0, float pos1, float pos2, float pos3) {
+boolean sendPos(float pos0, float pos1, float pos2, float pos3) {
+  if (pos0 < 0 || pos1 < 0 || pos2 < 0 || pos3 < 0) return false;
+  
+  
   OscMessage myMessage = new OscMessage("/go");
   //println("Sending /go/" + pos);
  // myMessage.add(pos0);
@@ -213,6 +309,8 @@ void sendPos(float pos0, float pos1, float pos2, float pos3) {
   myMessage.add(pos3);
   
   oscP5.send(myMessage, myRemoteLocation);
+  
+  return true;
 }
 
 /* incoming osc message are forwarded to the oscEvent method. */
