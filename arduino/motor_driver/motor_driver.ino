@@ -184,10 +184,9 @@ void loop(){
     else if (state==HOMINGBACKOFF) {
       return;
     }
-    else state=ENDSTOP;
     
+    state=ENDSTOP;
     goalSpeed = 0;
-    
   }
   
   
@@ -446,7 +445,7 @@ void oscGo(OscMessage &m) {
   // /go/nwPos,nePos,sePos,swPos long ints
   if (state != OK) return; 
   
-  int value = m.getFloat(MOTOR_ID);
+  double value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
 }
 
