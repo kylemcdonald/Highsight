@@ -37,6 +37,13 @@ TODO: if homing seems to take longer than a reasonable time, state should go to 
 	float maxSpeed
 ```
 
+### set one motor's maximum acceleration (in approx. cm/sec^2)
+```
+/maxaccel
+	int motorID
+	float maxAccel
+```
+
 
 ## Motors to server
 

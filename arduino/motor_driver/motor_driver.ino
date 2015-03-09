@@ -438,6 +438,7 @@ void oscEvent(OscMessage &m) {
   m.plug("/go", oscGo); 
   m.plug("/home", oscHome);
   m.plug("/maxspeed", oscSetMaxSpeed); 
+  m.plug("/maxaccel", oscSetMaxAccel);
 }
 
 
@@ -461,6 +462,14 @@ void oscSetMaxSpeed(OscMessage &m) {
   int motor = m.getInt(0);
   if (motor==MOTOR_ID) {
     pidSetMaxSpeed(m.getFloat(1));
+  }
+}
+
+
+void oscSetMaxAccel(OscMessage &m) {
+  int motor = m.getInt(0);
+  if (motor==MOTOR_ID) {
+    MAX_ACCEL = m.getFloat(1);
   }
 }
 
