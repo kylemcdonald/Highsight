@@ -436,6 +436,7 @@ void sendOscStatus(long stepper, long encoder) {
 
 void oscEvent(OscMessage &m) { 
   m.plug("/go", oscGo); 
+  m.plug("/go2", oscGo2);
   m.plug("/home", oscHome);
   m.plug("/maxspeed", oscSetMaxSpeed); 
   m.plug("/maxaccel", oscSetMaxAccel);
@@ -443,12 +444,25 @@ void oscEvent(OscMessage &m) {
 
 
 void oscGo(OscMessage &m) {
-  // /go/nwPos,nePos,sePos,swPos long ints
+  // /go/motor0pos,motor1pos,motor2pos,motor3pos long ints
   if (state != OK) return; 
   
   double value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
+  pidSetMaxSpeed(MAX_SPEED);
 }
+
+
+void oscGo2(OscMessage &m) {
+  if (state != OK) return;
+  
+  double pos = m.getFloat(MOTOR_ID*2);
+  double spd = m.getFloat(MOTOR_ID*2+1);
+  pidSetpoint = pos;
+  pidSetMaxSpeed(spd);
+}
+
+
 
 void oscHome(OscMessage &m) {
   int motor = m.getInt(0);
@@ -461,7 +475,8 @@ void oscHome(OscMessage &m) {
 void oscSetMaxSpeed(OscMessage &m) {
   int motor = m.getInt(0);
   if (motor==MOTOR_ID) {
-    pidSetMaxSpeed(m.getFloat(1));
+    MAX_SPEED = m.getFloat(1);
+    pidSetMaxSpeed(MAX_SPEED);
   }
 }
 
