@@ -139,6 +139,18 @@ void sendHome(int motorID) {
   
 }
 
+float z = 52;
+void keyPressed() {
+  println("keyPressed: ", key);
+  switch (key) {
+    case 'i': z += 1;
+      break;
+      
+    case 'k': z -= 1;
+      break;
+  }
+  mouseDragged();
+}
 
 void mousePressed() {
   mouseDragged();
@@ -146,18 +158,18 @@ void mousePressed() {
 
 void mouseDragged() {
   
-  float range = 12; 
+  float range = 24; 
   
   float x = -range/2.0 + (mouseX / 800.0)*range;
   float y = -range/2.0 + (mouseY / 600.0)*range;
-  float z = 48;
+  //float z = 43;
   
   if (x < -range/2) x = -range/2;
   if (x > range/2) x = range/2;
   if (y < -range/2) y = -range/2;
   if (y > range/2) y = range/2;
-  if (z < 45) z = 45;
-  if (z > 60) z = 60;
+  if (z < 42) z = 42;
+  if (z > 72) z = 72;
   
   float positions[] = new float[4];
   for (int i=0; i<4; i++) {
