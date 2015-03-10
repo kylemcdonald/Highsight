@@ -121,7 +121,7 @@ enum stateEnum {
   STOPPED,          // stopped by /stop command
   ENDSTOP,          // unexpectedly hit the end stop, need to home again
   MOTOROFF          // motor power off by /disable command, need to home again
-} state = NOTHOMED;
+} state = MOTOROFF;
 
 
 
@@ -274,7 +274,7 @@ void setupMotorDriver() {
   pinMode(DIRPIN, OUTPUT);
   pinMode(ENAPIN, OUTPUT);
   
-  digitalWrite(ENAPIN, 1); // enable motor driver
+  digitalWrite(ENAPIN, 0); // disable motor driver
   
   // set up interrupts for motor speed control
   Timer1.initialize(1000);
