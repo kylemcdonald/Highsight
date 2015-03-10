@@ -262,6 +262,9 @@ void keyPressed() {
       
     case 'k': z -= 1;
       break;
+      
+    default:
+      return; // don't call mouseDragged
   }
   mouseDragged();
 }
