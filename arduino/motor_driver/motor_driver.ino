@@ -533,8 +533,10 @@ void oscResume(OscMessage &m) {
 void oscSetMotorPower(OscMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     int p = m.getInt(m.size()-1);
-    if (p && state==MOTOROFF) {
-      state = NOTHOMED;
+    if (p) {
+      if (state==MOTOROFF) {
+        state = NOTHOMED;
+      }
       motorEnable(true);
     }
     else {
