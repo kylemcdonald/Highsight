@@ -23,6 +23,9 @@ float MAX_ACCEL = 250.0; // approx cm/sec/sec
 float mouseRange = 36;
 float boxSize = 500;
 
+// timeout
+int lastMessageTime[] = new int[NUM_MOTORS]; 
+
 
 // smoothing
 class Smoother {
@@ -221,6 +224,15 @@ void draw() {
   ellipse((float)(smoother.x+mouseRange/2.0 )* boxSize/mouseRange + (400-boxSize/2), 
     (float)(-smoother.y+mouseRange/2.0 )* boxSize/mouseRange + (300-boxSize/2), 
     10, 10);
+    
+    
+  // check for uncommunicative motor
+  int now = millis();
+  for (int i=0; i<NUM_MOTORS; i++) {
+    if (now - lastMessageTime[i] > 1000) {
+      statelabels[i].setText("TIMEOUT!");
+    }
+  }
 }
 
 void transmitPositions(float x, float y, float z) {
@@ -423,6 +435,7 @@ void oscEvent(OscMessage theOscMessage) {
     
     poslabels[motor].setText(""+pos);
     statelabels[motor].setText(state);
+    lastMessageTime[motor] = millis();
     
     println("Motor " + motor + " " + state + " pos " + pos + " and speed " + speed + " steps " 
       + steps + " encs " + encs);
