@@ -18,6 +18,7 @@ float MAX_ACCEL = 300.0; // approx cm/sec/sec
 
 // mouse interface
 float mouseRange = 36;
+float boxSize = 500;
 
 
 // smoothing
@@ -25,7 +26,7 @@ class Smoother {
   double x=0,y=0,z=52;
   double goalx=0, goaly=0, goalz=52;
   double vx=0,vy=0,vz=0;
-  double max_vel = 13.0; // in room units (inches for this test) per second
+  double max_vel = 24.0; // in room units (inches for this test) per second
   //float max_acc = 50.0; // ditto
 
   void setPos(double _x, double _y, double _z) {
@@ -159,9 +160,9 @@ void setup() {
 
     
   for (int i=0; i<4; i++) {
-    cp5.addButton("HOME"+i).setPosition(40+90*i, 40);
-    poslabels[i] = cp5.addTextlabel("pos"+i).setPosition(60+90*i, 80);
-    statelabels[i] = cp5.addTextlabel("state"+i).setPosition(60+90*i, 65);
+    cp5.addButton("HOME"+i).setPosition(40+90*i, 10);
+    poslabels[i] = cp5.addTextlabel("pos"+i).setPosition(60+90*i, 50);
+    statelabels[i] = cp5.addTextlabel("state"+i).setPosition(60+90*i, 35);
   }
   
   /* start oscP5, listening for incoming messages at port 12000 */
@@ -192,7 +193,9 @@ int last_time = millis();
 void draw() {
   //sendPos((int)(1000+2500*sin(millis()/350.0)));
   background(0);
-  fill(255);
+  
+  fill(80);
+  rect(400-boxSize/2, 300-boxSize/2, boxSize, boxSize);
   
   int dt = millis() - last_time;
   last_time = millis();
@@ -200,7 +203,10 @@ void draw() {
   //   float x = -range/2.0 + (mouseX / 800.0)*range;
   //  float y = -range/2.0 + (1.0 - mouseY / 600.0)*range;
   
-  ellipse((float)(smoother.x+mouseRange/2.0 )* 800.0/mouseRange, (float)(-smoother.y+mouseRange/2.0 )* 600.0/mouseRange, 10, 10);
+  fill(255);
+  ellipse((float)(smoother.x+mouseRange/2.0 )* boxSize/mouseRange + (400-boxSize/2), 
+    (float)(-smoother.y+mouseRange/2.0 )* boxSize/mouseRange + (300-boxSize/2), 
+    10, 10);
   smoother.update(dt);
   transmitPositions((float)smoother.x, (float)smoother.y, (float)smoother.z);
 }
@@ -219,6 +225,7 @@ void transmitPositions(float x, float y, float z) {
     positions[0], positions[1], positions[2], positions[3]);
   
   sendPos(positions[0], positions[1], positions[2], positions[3]);
+ 
 }
 
 
@@ -265,6 +272,10 @@ void mousePressed() {
 }
 
 void mouseDragged() {
+  if (mouseX < 400-boxSize/2 || mouseX > 400+boxSize/2 || mouseY < 300-boxSize/2 || mouseY > 300+boxSize/2) return;
+  
+  
+  
   if (!max_speed_sent) {
     max_speed_sent = true;
     for (int m=0; m<NUM_MOTORS; m++) {
@@ -277,9 +288,10 @@ void mouseDragged() {
   
   float range = mouseRange; 
   
-  float x = -range/2.0 + (mouseX / 800.0)*range;
-  float y = -range/2.0 + (1.0 - mouseY / 600.0)*range;
-  //float z = 43;
+  float x = -range/2.0 + ((mouseX-(400-boxSize/2.0)) / boxSize)*range;
+  float y = -range/2.0 + (1.0 - (mouseY-(300-boxSize/2.0)) / boxSize)*range;
+  //println("------",(mouseX-(400-boxSize/2.0)), mouseY-(300-boxSize/2.0),x,y);
+
   
   if (x < -range/2) x = -range/2;
   if (x > range/2) x = range/2;
