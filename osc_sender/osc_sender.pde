@@ -290,7 +290,7 @@ void sendHome(int motorID) {
   
 }
 
-float z = 52;
+float x=0, y=0, z = 52;
 void keyPressed() {
   println("keyPressed: ", key);
   switch (key) {
@@ -303,7 +303,12 @@ void keyPressed() {
     default:
       return; // don't call mouseDragged
   }
-  mouseDragged();
+  
+  if (z < 36) z = 36;
+  if (z > 60) z = 60;
+  
+  smoother.setGoal(x, y, z);
+  
 }
 
 void mousePressed() {
@@ -330,8 +335,8 @@ void mouseDragged() {
   
   float range = mouseRange; 
   
-  float x = -range/2.0 + ((mouseX-(400-boxSize/2.0)) / boxSize)*range;
-  float y = -range/2.0 + (1.0 - (mouseY-(300-boxSize/2.0)) / boxSize)*range;
+  x = -range/2.0 + ((mouseX-(400-boxSize/2.0)) / boxSize)*range;
+  y = -range/2.0 + (1.0 - (mouseY-(300-boxSize/2.0)) / boxSize)*range;
   //println("------",(mouseX-(400-boxSize/2.0)), mouseY-(300-boxSize/2.0),x,y);
 
   
