@@ -7,11 +7,14 @@ ControlP5 cp5;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 
+String state = "ok";
+
+
 int NUM_MOTORS = 4;
 
 float HOMING_SPEED = 12.0;
 float STARTUP_MAX_SPEED = 15.0; // go slow to home position
-float MAX_SPEED = 60.0;  // approx cm/sec
+float MAX_SPEED = 30.0;  // approx cm/sec
 boolean max_speed_sent = false;
 float MAX_ACCEL = 300.0; // approx cm/sec/sec
 
@@ -158,6 +161,9 @@ void setup() {
   size(800,600);
   cp5 = new ControlP5(this);
 
+
+  cp5.addButton("STOP").setPosition(729,10).setSize(50,40);
+  cp5.addButton("resume").setPosition(734,55).setSize(40,20);
     
   for (int i=0; i<4; i++) {
     cp5.addButton("HOME"+i).setPosition(40+90*i, 10);
@@ -197,18 +203,21 @@ void draw() {
   fill(80);
   rect(400-boxSize/2, 300-boxSize/2, boxSize, boxSize);
   
-  int dt = millis() - last_time;
+  if (state.equals("stopped")) {
+    // stop sending updates and stop time
+  }
+  else {    
+    int dt = millis() - last_time;
+    
+    smoother.update(dt);
+    transmitPositions((float)smoother.x, (float)smoother.y, (float)smoother.z);
+  }
+  
   last_time = millis();
-  
-  //   float x = -range/2.0 + (mouseX / 800.0)*range;
-  //  float y = -range/2.0 + (1.0 - mouseY / 600.0)*range;
-  
   fill(255);
   ellipse((float)(smoother.x+mouseRange/2.0 )* boxSize/mouseRange + (400-boxSize/2), 
     (float)(-smoother.y+mouseRange/2.0 )* boxSize/mouseRange + (300-boxSize/2), 
     10, 10);
-  smoother.update(dt);
-  transmitPositions((float)smoother.x, (float)smoother.y, (float)smoother.z);
 }
 
 void transmitPositions(float x, float y, float z) {
@@ -244,6 +253,17 @@ public void HOME2(int val) {
   println("HOME 3 BUTTON");
   sendHome(3);
 }  
+public void STOP(int val) {
+  OscMessage myMessage = new OscMessage("/stop");
+  oscP5.send(myMessage, myRemoteLocation);
+  state="stopped";
+}
+public void resume(int val) {
+  OscMessage myMessage = new OscMessage("/resume");
+  oscP5.send(myMessage, myRemoteLocation);
+  state="ok";
+}
+
 
 void sendHome(int motorID) { 
   OscMessage myMessage = new OscMessage("/home");

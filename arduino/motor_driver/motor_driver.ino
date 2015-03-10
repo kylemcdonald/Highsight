@@ -119,7 +119,7 @@ enum stateEnum {
   OK,               // all is well, ready for motion commands
   STOPPED,          // stopped by /stop command
   ENDSTOP,          // unexpectedly hit the end stop, need to home again
-  MOTOROFF          // motor off by /disable command, need to home again
+  POWEROFF          // motor off by /disable command, need to home again
 } state = NOTHOMED;
 
 
@@ -420,6 +420,9 @@ void sendOscStatus(long stepper, long encoder) {
     case OK:  
       msg.add("OK");
       break;
+    case STOPPED:
+      msg.add("STOPPED");
+      break;
       
     default:  
        msg.add("UNKNOWN");
@@ -440,6 +443,9 @@ void oscEvent(OscMessage &m) {
   m.plug("/home", oscHome);
   m.plug("/maxspeed", oscSetMaxSpeed); 
   m.plug("/maxaccel", oscSetMaxAccel);
+  
+  m.plug("/stop", oscStop);
+  m.plug("/resume", oscResume);
 }
 
 
@@ -485,6 +491,23 @@ void oscSetMaxAccel(OscMessage &m) {
   int motor = m.getInt(0);
   if (motor==MOTOR_ID) {
     MAX_ACCEL = m.getFloat(1);
+  }
+}
+
+
+// STOP: 
+void oscStop(OscMessage &m) {
+  if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
+    if (state==OK) state = STOPPED;
+    else if (state==HOMING || state==HOMINGBACKOFF) state = NOTHOMED;
+  }
+  goalSpeed = 0;
+}
+
+// RESUME: 
+void oscResume(OscMessage &m) {
+  if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
+    if (state==STOPPED) state = OK; 
   }
 }
 

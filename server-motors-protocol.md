@@ -43,6 +43,33 @@ TODO: if homing seems to take longer than a reasonable time, state should go to 
 ```
 
 
+### emergency stop
+Should probably always stop all motors - could be dangerous to keep running with one stopped motor.
+
+If motor is OK, its state will change to STOPPED; if HOMING/HOMINGBACKOFF it will go to NOTHOMED; else it will stay in whatever state it was in. (OK and the HOMING states are the only ones where the motor can be moving.)
+
+Homing a motor will clear STOPPED state, as will /resume
+
+Stop all motors:
+```
+/stop
+```
+
+Stop one motor:
+```
+/stop
+	int motorID
+```
+
+### resume after stop
+Get back in service after e-stop - can address all motors (no argument) or just one. Motor will return to OK state if it was OK before stopping.
+```
+/resume
+
+/resume
+	int motorID
+```
+
 
 ### set one motor's maximum speed (in approx. cm/sec)
 ```
@@ -65,7 +92,7 @@ TODO: if homing seems to take longer than a reasonable time, state should go to 
 ```
 /status
 	int motorID
-	string state	# OK (not yet implemented: NOTHOMED, HOMING, STOPPED, or ENDSTOP)
+	string state	# OK, NOTHOMED, HOMING, HOMINGBACKOFF, or ENDSTOP. Not yet implemented: STOPPED, POWEROFF, HOMINGERROR
 	float position	# in encoder steps
 	float velocity	# in approximate cm/sec
 	
