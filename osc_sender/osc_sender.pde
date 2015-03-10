@@ -164,6 +164,9 @@ void setup() {
 
   cp5.addButton("STOP").setPosition(729,10).setSize(50,40);
   cp5.addButton("resume").setPosition(734,55).setSize(40,20);
+  
+  cp5.addButton("MOTORS_OFF").setPosition(729,110).setSize(50,40);
+  cp5.addButton("MOTORS_ON").setPosition(734,155).setSize(40,20);
     
   for (int i=0; i<4; i++) {
     cp5.addButton("HOME"+i).setPosition(40+90*i, 10);
@@ -264,6 +267,20 @@ public void resume(int val) {
   state="ok";
 }
 
+public void MOTORS_OFF(int val) {
+  OscMessage myMessage = new OscMessage("/motor");
+  myMessage.add(0);
+  oscP5.send(myMessage, myRemoteLocation);
+  state="stopped";
+}
+public void MOTORS_ON(int val) {
+  OscMessage myMessage = new OscMessage("/motor");
+  myMessage.add(1);
+  oscP5.send(myMessage, myRemoteLocation);
+  state="ok";
+}
+
+
 
 void sendHome(int motorID) { 
   OscMessage myMessage = new OscMessage("/home");
@@ -295,6 +312,8 @@ void mousePressed() {
 }
 
 void mouseDragged() {
+  if (state != "ok") return;
+  
   if (mouseX < 400-boxSize/2 || mouseX > 400+boxSize/2 || mouseY < 300-boxSize/2 || mouseY > 300+boxSize/2) return;
   
   

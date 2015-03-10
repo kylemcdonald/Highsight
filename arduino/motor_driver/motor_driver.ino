@@ -119,7 +119,7 @@ enum stateEnum {
   OK,               // all is well, ready for motion commands
   STOPPED,          // stopped by /stop command
   ENDSTOP,          // unexpectedly hit the end stop, need to home again
-  POWEROFF          // motor off by /disable command, need to home again
+  MOTOROFF          // motor power off by /disable command, need to home again
 } state = NOTHOMED;
 
 
@@ -184,9 +184,14 @@ void loop(){
     else if (state==HOMINGBACKOFF) {
       return;
     }
+    else if (state==MOTOROFF) {
+      return;
+    }
     
-    state=ENDSTOP;
-    goalSpeed = 0;
+    else {
+      state=ENDSTOP;
+      goalSpeed = 0;
+    }
   }
   
   
@@ -330,6 +335,11 @@ void countSteps() {
 }
 
 
+// enable or disable motor
+void motorEnable(bool power) {
+  digitalWrite(ENAPIN, power);
+}
+
 
 
 // ENCODER HANDLERS -----------------------------
@@ -423,6 +433,9 @@ void sendOscStatus(long stepper, long encoder) {
     case STOPPED:
       msg.add("STOPPED");
       break;
+    case MOTOROFF:
+      msg.add("MOTOROFF");
+      break;
       
     default:  
        msg.add("UNKNOWN");
@@ -446,6 +459,8 @@ void oscEvent(OscMessage &m) {
   
   m.plug("/stop", oscStop);
   m.plug("/resume", oscResume);
+  
+  m.plug("/motor", oscSetMotorPower);
 }
 
 
@@ -471,6 +486,8 @@ void oscGo2(OscMessage &m) {
 
 
 void oscHome(OscMessage &m) {
+  if (state==MOTOROFF) return;
+  
   int motor = m.getInt(0);
   if (motor==MOTOR_ID && state!=HOMING) {
     state = HOMING;
@@ -510,6 +527,26 @@ void oscResume(OscMessage &m) {
     if (state==STOPPED) state = OK; 
   }
 }
+
+
+// MOTOR POWER:
+void oscSetMotorPower(OscMessage &m) {
+  if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
+    int p = m.getInt(m.size()-1);
+    if (p && state==MOTOROFF) {
+      state = NOTHOMED;
+      motorEnable(true);
+    }
+    else {
+      state = MOTOROFF;
+      motorEnable(false);
+    }
+  }
+}
+
+
+
+
 
 
 

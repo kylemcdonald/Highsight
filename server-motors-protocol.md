@@ -86,6 +86,26 @@ Get back in service after e-stop - can address all motors (no argument) or just 
 ```
 
 
+
+### power control 
+Turn motor power off or on - with motors off it's ok to _slowly_ move ropes by hand.
+
+Driver will go to MOTOROFF state, and then to NOTHOMED state when power is turned back on.
+
+All motors:
+```
+/motor
+	int status (0=off, 1=on)
+```
+
+One motor:
+```
+/motor
+	int motorID
+	int status (0=off, 1=on)
+```
+
+
 ## Motors to server
 
 ### status report, sent frequently:
