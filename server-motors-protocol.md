@@ -1,6 +1,6 @@
 # OSC messages between server and motor controllers
 
-Motors are [NW, NE, SE, SW] in that order, or numbered 0,1,2,3
+Motors are numbered 0,1,2,3 but position in room may vary. Use a lookup table to remember which is NW, NE, SE, or SW motor.
 
 ## Server to motors (broadcast):
 
@@ -9,12 +9,24 @@ Motors are [NW, NE, SE, SW] in that order, or numbered 0,1,2,3
 Position is in encoder steps (approx 150 steps per cm) and calibration will be handled on the server.
 ```
 /go
-	float nwLength	# goal rope length in encoder steps
-	float neLength
-	float seLength
-	float swLength
+	float length0	# goal rope length in encoder steps
+	float length1
+	float length2
+	float length3
 ```
+_NOT TESTED_ - set goal positions with advisory speed (in approx cm/sec):
 
+```
+/go
+	float length0	# goal rope length in encoder steps
+	float speed0	# maximum speed in approximate cm/sec
+	float length1
+	float speed1
+	float length2
+	float speed2
+	float length3
+	float speed3
+```
 
 ### request one motor to find its home position
 Best to use a nice slow speed. If you think the motor is already pretty well homed and just want to confirm quickly, 
@@ -29,6 +41,7 @@ TODO: if homing seems to take longer than a reasonable time, state should go to 
 	int motorID
 	float speed	  # 10-12cm/sec is ok in small scale testing
 ```
+
 
 
 ### set one motor's maximum speed (in approx. cm/sec)
