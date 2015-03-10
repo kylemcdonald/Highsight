@@ -155,6 +155,9 @@ void loop(){
     }
       
   }
+  else if (state==NOTHOMED) {
+    goalSpeed = 0;
+  }
   
   
   int endstop = digitalRead(EXTENSIONENDSTOPPIN);

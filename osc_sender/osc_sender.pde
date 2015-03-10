@@ -14,9 +14,9 @@ int NUM_MOTORS = 4;
 
 float HOMING_SPEED = 12.0;
 float STARTUP_MAX_SPEED = 15.0; // go slow to home position
-float MAX_SPEED = 30.0;  // approx cm/sec
+float MAX_SPEED = 50.0;  // approx cm/sec
 boolean max_speed_sent = false;
-float MAX_ACCEL = 300.0; // approx cm/sec/sec
+float MAX_ACCEL = 250.0; // approx cm/sec/sec
 
 
 // mouse interface
