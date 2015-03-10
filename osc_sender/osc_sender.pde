@@ -10,8 +10,10 @@ NetAddress myRemoteLocation;
 int NUM_MOTORS = 4;
 
 float HOMING_SPEED = 12.0;
-float MAX_SPEED = 30.0;  // approx cm/sec
-float MAX_ACCEL = 150.0; // approx cm/sec/sec
+float STARTUP_MAX_SPEED = 15.0; // go slow to home position
+float MAX_SPEED = 60.0;  // approx cm/sec
+boolean max_speed_sent = false;
+float MAX_ACCEL = 300.0; // approx cm/sec/sec
 
 
 // mouse interface
@@ -79,8 +81,10 @@ class Winchbot {
   float stepsPerDistanceUnit;   // how many winch steps for one distance unit (e.g. inch)
   float referencePoint;         // in winch units - a convenient point for measuring
   float offsetInDistanceUnits;  // distance between winch and payload when winch is at reference point 
+  
+  float supportX, supportY, supportZ;    // position of this winch's carriage support point relative to carriage reference point  
 
-  Winchbot(int _motorID, float _x, float _y, float _z, float _steps, float _ref, float _offset) {
+  Winchbot(int _motorID, float _x, float _y, float _z, float _steps, float _ref, float _offset, float _sx, float _sy, float _sz) {
     int reverse = -1;
     
     motorID = _motorID;
@@ -90,13 +94,17 @@ class Winchbot {
     stepsPerDistanceUnit = reverse * _steps;
     referencePoint = _ref;
     offsetInDistanceUnits = _offset;
+    
+    supportX = _sx;
+    supportY = _sy;
+    supportZ = _sz;
   }
   
   // get distance from point, relative to CENTERPOINT
   float distanceFrom(float xr, float yr, float zr) {
-    float x0 = xr + CENTERPOINT[0];
-    float y0 = yr + CENTERPOINT[1];
-    float z0 = zr + CENTERPOINT[2];
+    float x0 = xr + supportX + CENTERPOINT[0];
+    float y0 = yr + supportY + CENTERPOINT[1];
+    float z0 = zr + supportZ + CENTERPOINT[2];
     
     float dist = (float)Math.sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0) + (z-z0)*(z-z0));
     //println("distanceFrom: " + x0 + "," + y0 + "," + z0 + " -> " + dist);
@@ -123,14 +131,19 @@ Winchbot winches[] = new Winchbot[4];
 float stepsPerInch = 454; 
 
 void setupWinches() {
-  //NW
-  winches[0] = new Winchbot(3,  4, 111, 69,   stepsPerInch, 13400, 97); // inches
+  //NW                 motorID  pos in room   rope length calibration    support point 
+  winches[0] = new Winchbot(3,  4, 111, 69,   stepsPerInch, 13400, 97    , -1, 1, 0); // inches
+  //winches[0] = new Winchbot(3,  -7, 108.75, 69,   stepsPerInch, 13400, 97    , -1, 1, 0); // inches
   //NE
-  winches[1] = new Winchbot(0,  80, 111, 69,  stepsPerInch, 13200, 79);
+  winches[1] = new Winchbot(0,  80, 111, 69,  stepsPerInch, 13200, 79    , 1, 1, 0);
+  //winches[1] = new Winchbot(0,  73.75, 111, 69,  stepsPerInch, 13200, 79    , 1, 1, 0);
   //SE
-  winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 13200, 60);
+  //winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
+  winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
+  //winches[2] = new Winchbot(1,  74.5, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
   //SW
-  winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 13290, 58);
+  winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 13290, 58    , -1, -1, 0);
+  //winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 13290, 58    , -1, -1, 0);
 }
 
 
@@ -161,7 +174,7 @@ void setup() {
   for (int m=0; m<NUM_MOTORS; m++) {
     OscMessage myMessage = new OscMessage("/maxspeed");
     myMessage.add(m); // motor 0
-    myMessage.add(MAX_SPEED);  // speed must be float!
+    myMessage.add(STARTUP_MAX_SPEED);  // speed must be float!
     oscP5.send(myMessage, myRemoteLocation);
     
     myMessage = new OscMessage("/maxaccel");
@@ -252,6 +265,15 @@ void mousePressed() {
 }
 
 void mouseDragged() {
+  if (!max_speed_sent) {
+    max_speed_sent = true;
+    for (int m=0; m<NUM_MOTORS; m++) {
+      OscMessage myMessage = new OscMessage("/maxspeed");
+      myMessage.add(m); // motor 0
+      myMessage.add(MAX_SPEED);  // speed must be float!
+      oscP5.send(myMessage, myRemoteLocation);
+    }
+  }
   
   float range = mouseRange; 
   
@@ -264,7 +286,7 @@ void mouseDragged() {
   if (y < -range/2) y = -range/2;
   if (y > range/2) y = range/2;
   if (z < 36) z = 36;
-  if (z > 72) z = 72;
+  if (z > 60) z = 60;
   
   smoother.setGoal(x, y, z);
   
@@ -294,6 +316,7 @@ void mouseDragged() {
 
 boolean sendPos(float pos0, float pos1, float pos2, float pos3) {
   if (pos0 < 0 || pos1 < 0 || pos2 < 0 || pos3 < 0) return false;
+  
   
   
   OscMessage myMessage = new OscMessage("/go");
