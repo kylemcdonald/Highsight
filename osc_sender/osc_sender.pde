@@ -128,7 +128,7 @@ class Winchbot {
   
 }
 
-Winchbot winches[] = new Winchbot[4];
+Winchbot winches[] = new Winchbot[NUM_MOTORS];
 
 
 // guessing that steps per inch
@@ -154,8 +154,8 @@ void setupWinches() {
 }
 
 
-Textlabel poslabels[] = new Textlabel[4];
-Textlabel statelabels[] = new Textlabel[4];
+Textlabel poslabels[] = new Textlabel[NUM_MOTORS];
+Textlabel statelabels[] = new Textlabel[NUM_MOTORS];
 Smoother smoother = new Smoother();
 
 void setup() {
@@ -171,7 +171,7 @@ void setup() {
   cp5.addButton("MOTORS_OFF").setPosition(729,110).setSize(50,40);
   cp5.addButton("MOTORS_ON").setPosition(734,155).setSize(40,20);
     
-  for (int i=0; i<4; i++) {
+  for (int i=0; i<NUM_MOTORS; i++) {
     cp5.addButton("HOME"+i).setPosition(40+90*i, 10);
     poslabels[i] = cp5.addTextlabel("pos"+i).setPosition(60+90*i, 50);
     statelabels[i] = cp5.addTextlabel("state"+i).setPosition(60+90*i, 35);
@@ -236,8 +236,8 @@ void draw() {
 }
 
 void transmitPositions(float x, float y, float z) {
-  float positions[] = new float[4];
-  for (int i=0; i<4; i++) {
+  float positions[] = new float[NUM_MOTORS];
+  for (int i=0; i<NUM_MOTORS; i++) {
     positions[winches[i].motorID] = winches[i].positionToSteps(x,y,z);
   }
       
