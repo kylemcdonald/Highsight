@@ -133,17 +133,17 @@ float stepsPerInch = 454;
 
 void setupWinches() {
   //NW                 motorID  pos in room   rope length calibration    support point 
-  winches[0] = new Winchbot(3,  4, 111, 69,   stepsPerInch, 13400, 97    , -1, 1, 0); // inches
+  winches[0] = new Winchbot(3,  4, 111, 69,   stepsPerInch, 27355, 68    , -1, 1, 0); // inches
   //winches[0] = new Winchbot(3,  -7, 108.75, 69,   stepsPerInch, 13400, 97    , -1, 1, 0); // inches
   //NE
-  winches[1] = new Winchbot(0,  80, 111, 69,  stepsPerInch, 13200, 79    , 1, 1, 0);
+  winches[1] = new Winchbot(0,  80, 111, 69,  stepsPerInch, 24229, 54.5    , 1, 1, 0);
   //winches[1] = new Winchbot(0,  73.75, 111, 69,  stepsPerInch, 13200, 79    , 1, 1, 0);
   //SE
   //winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
-  winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
+  winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 7865, 72    , 1, -1, 0);
   //winches[2] = new Winchbot(1,  74.5, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
   //SW
-  winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 13290, 58    , -1, -1, 0);
+  winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 6820, 72.75    , -1, -1, 0);
   //winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 13290, 58    , -1, -1, 0);
 }
 
