@@ -78,6 +78,7 @@ float MAX_SPEED = 30.0; // in approx cm/sec
 
 double goalSpeed = 0;
 float homingSpeed = 3.0;
+bool homed = false;
 
 const int BACKOFF_STEPS = 600; // how many encoder steps to reverse out of endstop (so Zero is this far from the switch)
 
@@ -174,6 +175,7 @@ void loop(){
       goalSpeed = 0;
       pidSetpoint = encoder0Pos;
       state = OK;
+      homed = true;
     }
   }
 
@@ -538,7 +540,8 @@ void oscSetMotorPower(OscMessage &m) {
     int p = m.getInt(m.size()-1);
     if (p) {
       if (state==MOTOROFF) {
-        state = NOTHOMED;
+        if (homed) state = OK;
+        else state = NOTHOMED;
       }
       motorEnable(true);
     }
