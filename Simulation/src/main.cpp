@@ -9,15 +9,18 @@
 #include "ofxConnexion.h"
 #include "ofxGui.h"
 
-float width = 634, depth = 664, height = 420;
-float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
-float eyeHeightMin = 30, eyeHeightMax = 380;
-float eyeWidthMax = 280, eyeDepthMax = 280;
-float minMouseDistance = 20;
-float maxMouseDistance = 250;
-float moveSpeedCps = 100; // cm / second
-float lookAngleSpeedDps = 90; // degrees / second
-float frameRate = 60;
+#define inchesToCm(x) (x * 2.54f)
+
+//const float width = 634, depth = 664, height = 420;
+const float width = inchesToCm(74.5), depth = inchesToCm(111.5), height = inchesToCm(69);
+const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
+const float eyePadding = 40;
+const float eyeHeightMin = eyePadding, eyeHeightMax = height - eyePadding;
+const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
+const float minMouseDistance = 20;
+const float maxMouseDistance = 250;
+const float lookAngleSpeedDps = 90; // degrees / second
+const float frameRate = 60;
 
 enum LiveMode {
     LIVE_MODE_XY,
@@ -35,11 +38,12 @@ void drawLineHighlight(ofVec3f start, ofVec3f end) {
     ofPopStyle();
 }
 
-class Cable {
+class Motor {
 public:
+    int id;
     ofVec3f eyeAttach, pillarAttach;
     float prevLength, lengthSpeedCps;
-    Cable() : prevLength(0), lengthSpeedCps(0) {
+    Motor() : prevLength(0), lengthSpeedCps(0) {
     }
     void update(ofVec3f eyePosition) {
         ofVec3f start = eyePosition + eyeAttach;
@@ -64,7 +68,7 @@ class ofApp : public ofBaseApp {
 public:
     ofxOscSender oscMotorsSend, oscOculusSend;
     ofxOscReceiver oscMotorsReceive;
-    Cable nw, ne, sw, se;
+    Motor nw, ne, sw, se;
     ofEasyCam cam;
     ofImage roomTexture, eyeTexture;
     ofMesh roomMesh, eyeMesh;
@@ -72,6 +76,7 @@ public:
     ofVec3f eyePosition;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
+    float moveSpeedCps = 100; // cm / second
     float lookAngle = 0;
     ofImage shadow;
     int liveMode;
@@ -80,6 +85,7 @@ public:
     ofxPanel gui;
     ofParameter<ofVec3f> connexionPosition, connexionRotation;
     ofxButton resetLookAngleBtn, toggleFullscreenBtn;
+    
     void setup() {
         ofBackground(0);
         ofDisableArbTex();
@@ -89,6 +95,10 @@ public:
         config.load("config.xml");
         
         moveSpeedCps = config.getFloatValue("motors/speed/max");
+        nw.id = config.getIntValue("motors/ids/nw");
+        ne.id = config.getIntValue("motors/ids/ne");
+        se.id = config.getIntValue("motors/ids/se");
+        sw.id = config.getIntValue("motors/ids/sw");
         
         oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
         oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
@@ -101,7 +111,7 @@ public:
         eyeModel.loadModel("eye-amb.dae");
         eyeTexture.load("eye-amb.jpg");
         eyeMesh = eyeModel.getMesh(0);
-        eyePosition.set(0, 0, eyeHeightMin);
+        eyePosition.set(0, 0, (eyeHeightMin + eyeHeightMax) / 2);
         
         mouseStart.set(0, 0);
         shadow.load("shadow.png");
@@ -160,17 +170,18 @@ public:
         ne.update(eyePosition);
         sw.update(eyePosition);
         se.update(eyePosition);
-        
+
         ofxOscMessage motors;
         motors.setAddress("/motors");
-        motors.addFloatArg(nw.prevLength);
-        motors.addFloatArg(nw.lengthSpeedCps);
-        motors.addFloatArg(ne.prevLength);
-        motors.addFloatArg(ne.lengthSpeedCps);
-        motors.addFloatArg(sw.prevLength);
-        motors.addFloatArg(sw.lengthSpeedCps);
-        motors.addFloatArg(se.prevLength);
-        motors.addFloatArg(se.lengthSpeedCps);
+        float sorted[] = {0, 0, 0, 0};
+        sorted[nw.id] = nw.prevLength;
+        sorted[ne.id] = ne.prevLength;
+        sorted[se.id] = se.prevLength;
+        sorted[sw.id] = sw.prevLength;
+        motors.addFloatArg(sorted[0]);
+        motors.addFloatArg(sorted[1]);
+        motors.addFloatArg(sorted[2]);
+        motors.addFloatArg(sorted[3]);
         oscMotorsSend.sendMessage(motors);
         
         ofxOscMessage oculus;

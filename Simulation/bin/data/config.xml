@@ -8,6 +8,12 @@
             <sendPort>12001</sendPort>
             <receivePort>1200</receivePort>
         </osc>
+        <ids>
+            <nw>3</nw>
+            <ne>0</ne>
+            <se>1</se>
+            <sw>2</sw>
+        </ids>
     </motors>
     <oculus>
         <osc>
