@@ -6,13 +6,17 @@
 #include "ofMain.h"
 #include "ofxAssimpModelLoader.h"
 #include "ofxOsc.h"
+#include "ofxConnexion.h"
+#include "ofxGui.h"
 
 float width = 634, depth = 664, height = 420;
 float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
-float eyeHeightMin = 30;
+float eyeHeightMin = 30, eyeHeightMax = 380;
+float eyeWidthMax = 280, eyeDepthMax = 280;
 float minMouseDistance = 20;
 float maxMouseDistance = 250;
 float moveSpeedCps = 100; // cm / second
+float lookAngleSpeedDps = 90; // degrees / second
 float frameRate = 60;
 
 enum LiveMode {
@@ -58,7 +62,8 @@ public:
 
 class ofApp : public ofBaseApp {
 public:
-    ofxOscSender osc;
+    ofxOscSender oscMotorsSend, oscOculusSend;
+    ofxOscReceiver oscMotorsReceive;
     Cable nw, ne, sw, se;
     ofEasyCam cam;
     ofImage roomTexture, eyeTexture;
@@ -67,15 +72,27 @@ public:
     ofVec3f eyePosition;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
+    float lookAngle = 0;
     ofImage shadow;
     int liveMode;
     bool live = false;
+    ofxConnexion connexion;
+    ofxPanel gui;
+    ofParameter<ofVec3f> connexionPosition, connexionRotation;
+    ofxButton resetLookAngleBtn, toggleFullscreenBtn;
     void setup() {
         ofBackground(0);
         ofDisableArbTex();
         ofSetFrameRate(frameRate);
         
-        osc.setup("localhost", 8000);
+        ofXml config;
+        config.load("config.xml");
+        
+        moveSpeedCps = config.getFloatValue("motors/speed/max");
+        
+        oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
+        oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
+        oscMotorsReceive.setup(config.getIntValue("motors/osc/sendPort"));
         
         roomModel.loadModel("room-amb.dae");
         roomTexture.load("room-amb.jpg");
@@ -99,8 +116,82 @@ public:
         ne.pillarAttach.set(+width / 2, +depth / 2, height);
         sw.pillarAttach.set(-width / 2, -depth / 2, height);
         se.pillarAttach.set(+width / 2, -depth / 2, height);
+        
+        connexion.start();
+        ofAddListener(connexion.connexionEvent, this, &ofApp::connexionData);
+        
+        gui.setup();
+        gui.add(connexionPosition.set("Connexion Position",
+                                      ofVec3f(),
+                                      ofVec3f(-1, -1, -1),
+                                      ofVec3f(+1, +1, +1)));
+        gui.add(connexionRotation.set("Connexion Rotation",
+                                      ofVec3f(),
+                                      ofVec3f(-1, -1, -1),
+                                      ofVec3f(+1, +1, +1)));
+        gui.add(resetLookAngleBtn.setup("Reset look angle"));
+        gui.add(toggleFullscreenBtn.setup("Toggle fullscreen"));
+        resetLookAngleBtn.addListener(this, &ofApp::resetLookAngle);
+        toggleFullscreenBtn.addListener(this, &ofApp::toggleFullscreen);
+    }
+    void resetLookAngle() {
+        lookAngle = 0;
+    }
+    void toggleFullscreen() {
+        ofToggleFullscreen();
+    }
+    void connexionData(ConnexionData& data) {
+        connexionPosition = data.getNormalizedPosition();
+        connexionRotation = data.getNormalizedRotation();
+    }
+    void exit() {
+        connexion.stop();
     }
     void update() {
+        updateConnexion();
+        updateMouse();
+        
+        // clamp min position above floor
+        eyePosition.x = ofClamp(eyePosition.x, -eyeWidthMax, +eyeWidthMax);
+        eyePosition.y = ofClamp(eyePosition.y, -eyeDepthMax, +eyeDepthMax);
+        eyePosition.z = ofClamp(eyePosition.z, eyeHeightMin, eyeHeightMax);
+        
+        nw.update(eyePosition);
+        ne.update(eyePosition);
+        sw.update(eyePosition);
+        se.update(eyePosition);
+        
+        ofxOscMessage motors;
+        motors.setAddress("/motors");
+        motors.addFloatArg(nw.prevLength);
+        motors.addFloatArg(nw.lengthSpeedCps);
+        motors.addFloatArg(ne.prevLength);
+        motors.addFloatArg(ne.lengthSpeedCps);
+        motors.addFloatArg(sw.prevLength);
+        motors.addFloatArg(sw.lengthSpeedCps);
+        motors.addFloatArg(se.prevLength);
+        motors.addFloatArg(se.lengthSpeedCps);
+        oscMotorsSend.sendMessage(motors);
+        
+        ofxOscMessage oculus;
+        oculus.setAddress("/lookAngle");
+        oculus.addFloatArg(lookAngle);
+        oscOculusSend.sendMessage(oculus);
+    }
+    void updateConnexion() {
+        moveVecCps = ofVec3f(connexionPosition->x,
+                             -connexionPosition->y,
+                             -connexionPosition->z);
+        moveVecCps.rotate(lookAngle, ofVec3f(0, 0, 1));
+        moveVecCps *= moveSpeedCps;
+        ofVec3f moveVecFps = moveVecCps / frameRate;
+        eyePosition += moveVecFps;
+        
+        float lookAngleDps = -connexionRotation->z * lookAngleSpeedDps;
+        float lookAngleFps = lookAngleDps / frameRate;
+        lookAngle += lookAngleFps;
+    }
+    void updateMouse() {
         ofVec2f mouseCur(mouseX, mouseY);
         mouseVec = mouseCur - mouseStart;
         if(mouseVec.length() > maxMouseDistance) {
@@ -120,24 +211,7 @@ public:
                 eyePosition.x += moveVecFps.x;
                 eyePosition.z += moveVecFps.y;
             }
-            eyePosition.z = MAX(eyePosition.z, eyeHeightMin);
         }
-        nw.update(eyePosition);
-        ne.update(eyePosition);
-        sw.update(eyePosition);
-        se.update(eyePosition);
-        
-        ofxOscMessage motors;
-        motors.setAddress("/motors");
-        motors.addFloatArg(nw.prevLength);
-        motors.addFloatArg(nw.lengthSpeedCps);
-        motors.addFloatArg(ne.prevLength);
-        motors.addFloatArg(ne.lengthSpeedCps);
-        motors.addFloatArg(sw.prevLength);
-        motors.addFloatArg(sw.lengthSpeedCps);
-        motors.addFloatArg(se.prevLength);
-        motors.addFloatArg(se.lengthSpeedCps);
-        osc.sendMessage(motors);
     }
     void draw() {
         cam.begin();
@@ -176,10 +250,13 @@ public:
         eyeMesh.drawFaces();
         ofDisableDepthTest();
         eyeTexture.unbind();
+        ofSetColor(ofColor::black);
+        ofRotate(lookAngle);
+        ofDrawLine(0, 0, 0, 90);
+        ofDrawTriangle(5, 90, 0, 100, -5, 90);
         ofPopMatrix();
         
         ofPushStyle();
-        ofSetColor(ofColor::red);
         nw.draw(eyePosition);
         ne.draw(eyePosition);
         sw.draw(eyePosition);
@@ -190,6 +267,7 @@ public:
         cam.end();
         
         if(live) {
+            ofPushMatrix();
             ofPushStyle();
             ofSetCircleResolution(64);
             ofVec2f mouseCur(mouseX, mouseY);
@@ -219,7 +297,29 @@ public:
             ofDrawBitmapStringHighlight(axis0 + ":" + ofToString(roundf(moveVecCps.x)) + "cm/s", minMouseDistance + padding, 0);
             ofDrawBitmapStringHighlight(axis1 + ":" + ofToString(roundf(moveVecCps.y)) + "cm/s", 0, -(minMouseDistance + padding));
             ofPopStyle();
+            ofPopMatrix();
         }
+        
+        gui.draw();
+        
+        drawCursor();
+    }
+    void drawCursor() {
+        // custom cursor
+        ofPushMatrix();
+        ofHideCursor();
+        ofPushStyle();
+        ofTranslate(ofGetMouseX()+.5, ofGetMouseY()+.5);
+        ofSetColor(ofColor::black, 64);
+        ofDrawCircle(0, 0, 12);
+        ofSetColor(ofColor::white, 128);
+        ofDrawCircle(0, 0, 6);
+        ofSetColor(ofColor::black, 255);
+        ofDrawCircle(0, 0, 1.5);
+        ofSetColor(ofColor::white, 255);
+        ofDrawCircle(0, 0, .5);
+        ofPopMatrix();
+        ofPopStyle();
     }
     void keyPressed(int key) {
         if(key == ' ' && !live) {
@@ -231,6 +331,12 @@ public:
             mouseStart.set(mouseX, mouseY);
             live = true;
             liveMode = LIVE_MODE_XZ;
+        }
+        if(key == 'r') {
+            resetLookAngle();
+        }
+        if(key == 'f') {
+            toggleFullscreen();
         }
     }
     void keyReleased(int key) {
