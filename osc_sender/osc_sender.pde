@@ -20,7 +20,7 @@ float MAX_ACCEL = 250.0; // approx cm/sec/sec
 
 
 // mouse interface
-float mouseRange = 36;
+float mouseRange = 40;
 float boxSize = 500;
 
 // timeout
@@ -32,7 +32,7 @@ class Smoother {
   double x=0,y=0,z=52;
   double goalx=0, goaly=0, goalz=52;
   double vx=0,vy=0,vz=0;
-  double max_vel = 24.0; // in room units (inches for this test) per second
+  double max_vel = 12.0; // in room units (inches for this test) per second
   //float max_acc = 50.0; // ditto
 
   void setPos(double _x, double _y, double _z) {
@@ -170,6 +170,8 @@ void setup() {
   
   cp5.addButton("MOTORS_OFF").setPosition(729,110).setSize(50,40);
   cp5.addButton("MOTORS_ON").setPosition(734,155).setSize(40,20);
+  
+  cp5.addButton("CRASH_TEST").setPosition(729,200);
     
   for (int i=0; i<NUM_MOTORS; i++) {
     cp5.addButton("HOME"+i).setPosition(40+90*i, 10);
@@ -292,6 +294,10 @@ public void MOTORS_ON(int val) {
   state="ok";
 }
 
+public void CRASH_TEST(int val) {
+  OscMessage myMessage = new OscMessage("/crashtest");
+  oscP5.send(myMessage, myRemoteLocation);
+}
 
 
 void sendHome(int motorID) { 

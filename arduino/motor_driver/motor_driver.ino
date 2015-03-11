@@ -20,6 +20,10 @@
 // https://github.com/davidbouchard/arduino-osc
 #include <OscUDP.h>
 
+// Watchdog Timer and crash reports derived from ArduinoCrashMonitor by MegunoLink
+// https://github.com/Megunolink/ArduinoCrashMonitor
+// http://www.megunolink.com/how-to-detect-lockups-using-the-arduino-watchdog/
+#include "ApplicationMonitor.h"
 
 
 // Ethernet libraries
@@ -109,6 +113,10 @@ int destinationPort = 12000;
 EthernetUDP UDP;
 OscUDP etherOSC;  
 
+// WATCHDOG TIMER ---------
+Watchdog::CApplicationMonitor ApplicationMonitor;
+
+
 
 
 // SYSTEM STATE
@@ -133,8 +141,8 @@ void setup() {
   setupMotorDriver(); 
   setupEndstops();
   setupPID();
- 
-  //Serial.begin (115200);
+  
+  setupWatchdog();
 }
 
 
@@ -144,6 +152,13 @@ long laststepperpos = 0, lastencoder0Pos = 0;
 int printcounter = 0;
 
 void loop(){ 
+  
+  // call off the watchdog
+  ApplicationMonitor.IAmAlive();
+  ApplicationMonitor.SetData(state);
+
+  
+  
   if (state==OK) {
     // PID loop
     pidInput = encoder0Pos;
@@ -236,6 +251,13 @@ void loop(){
 
 
 
+
+void setupWatchdog() {
+  OscMessage msg("/crashreport");
+  ApplicationMonitor.Dump(msg);
+  ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_4s);
+  etherOSC.send(msg, destination);
+}
 
 
 
@@ -466,6 +488,8 @@ void oscEvent(OscMessage &m) {
   m.plug("/resume", oscResume);
   
   m.plug("/motor", oscSetMotorPower);
+  
+  m.plug("/crashtest", oscCrash);
 }
 
 
@@ -552,7 +576,10 @@ void oscSetMotorPower(OscMessage &m) {
   }
 }
 
-
+// WATCHDOG TEST
+void oscCrash(OscMessage &m) {
+  delay(5000); // watchdog timer is 4 seconds so 5 second delay should trigger it
+}
 
 
 
