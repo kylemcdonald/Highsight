@@ -1,0 +1,17 @@
+<xml>
+    <motors>
+        <speed> <!-- cm / s -->
+            <max>100</max>
+        </speed>
+        <osc>
+            <host>localhost</host>
+            <sendPort>12001</sendPort>
+            <receivePort>1200</receivePort>
+        </osc>
+    </motors>
+    <oculus>
+        <osc>
+            <sendPort>9000</sendPort>
+        </osc>
+    </oculus>
+</xml>
