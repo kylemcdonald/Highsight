@@ -68,9 +68,9 @@ public:
     }
     void drawScene() {
         ofPushMatrix();
-        ofScale(100, 100, 100); // avoid clipping
-        ofRotateX(-90);
-        ofRotateZ(-lookAngle);
+        ofScale(100, -100, 100); // avoid clipping
+        ofRotateX(+90);
+        ofRotateZ(+lookAngle);
         fisheye.draw(cam.getTexture());
         ofPopMatrix();
         
