@@ -113,6 +113,8 @@ int destinationPort = 12000;
 EthernetUDP UDP;
 OscUDP etherOSC;  
 
+int MSEC_PER_STATUS = 50; // millseconds between sending status messages
+
 // WATCHDOG TIMER ---------
 Watchdog::CApplicationMonitor ApplicationMonitor;
 
@@ -148,8 +150,8 @@ void setup() {
 
 
 unsigned long lastmicros = micros();
+unsigned long lastStatusMsgMillis = millis();
 long laststepperpos = 0, lastencoder0Pos = 0;
-int printcounter = 0;
 
 void loop(){ 
   
@@ -222,14 +224,7 @@ void loop(){
   updateSpeed(dt);
   
   
-  
-  // check for slip
-  long stepper_steps_this_update = stepperpos - laststepperpos;
-  laststepperpos = stepperpos;
-  
-  long encoder_steps_this_update = encoder0Pos - lastencoder0Pos;
-  lastencoder0Pos = encoder0Pos;
-  
+
   
   
   
@@ -238,15 +233,22 @@ void loop(){
   
   
   // send updates 
-  if (printcounter==0) {
+  if (millis() - lastStatusMsgMillis >= MSEC_PER_STATUS) {
+    lastStatusMsgMillis = millis();
+    
+    // send stepper and encoder steps so server can check for slip
+    long stepper_steps_this_update = stepperpos - laststepperpos;
+    laststepperpos = stepperpos;
+    
+    long encoder_steps_this_update = encoder0Pos - lastencoder0Pos;
+    lastencoder0Pos = encoder0Pos;
+    
     sendOscStatus(stepper_steps_this_update, encoder_steps_this_update);
   }
-  if (printcounter++ > 100) printcounter = 0;
   
   
   
   
-  delay(1);
 }
 
 
@@ -526,8 +528,7 @@ void oscHome(OscMessage &m) {
 }
 
 void oscSetMaxSpeed(OscMessage &m) {
-  int motor = m.getInt(0);
-  if (motor==MOTOR_ID) {
+  if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     MAX_SPEED = m.getFloat(1);
     pidSetMaxSpeed(MAX_SPEED);
   }
@@ -535,19 +536,26 @@ void oscSetMaxSpeed(OscMessage &m) {
 
 
 void oscSetMaxAccel(OscMessage &m) {
-  int motor = m.getInt(0);
-  if (motor==MOTOR_ID) {
+  if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     MAX_ACCEL = m.getFloat(1);
   }
 }
 
 
 void oscSetDeadZone(OscMessage &m) {
-  if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
+  if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     CLOSE_ENOUGH = m.getInt(m.size()-1);
   }
 }
 
+
+void oscSetStatusInterval(OscMessage &m) {
+  if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
+    int msec = m.getInt(m.size()-1);
+    if (msec<3 || msec>200) return;
+    MSEC_PER_STATUS = msec;
+  }
+}
 
 
 

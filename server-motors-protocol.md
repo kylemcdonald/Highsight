@@ -71,15 +71,21 @@ Get back in service after e-stop - can address all motors (no argument) or just 
 ```
 
 
-### set one motor's maximum speed (in approx. cm/sec)
+### set one or all motors' maximum speed (in approx. cm/sec)
 ```
+/maxspeed
+	float maxSpeed
+	
 /maxspeed
 	int motorID
 	float maxSpeed
 ```
 
-### set one motor's maximum acceleration (in approx. cm/sec^2)
+### set one or all motors' maximum acceleration (in approx. cm/sec^2)
 ```
+/maxaccel
+	float maxAccel
+	
 /maxaccel
 	int motorID
 	float maxAccel
