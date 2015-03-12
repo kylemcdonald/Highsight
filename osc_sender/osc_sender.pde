@@ -186,19 +186,19 @@ void setup() {
   //myRemoteLocation = new NetAddress("192.168.2.42",12001); // direct to motor0
   
   
-  for (int m=0; m<NUM_MOTORS; m++) {
+  //for (int m=0; m<NUM_MOTORS; m++) {
     OscMessage myMessage = new OscMessage("/maxspeed");
-    myMessage.add(m); // motor 0
+    //myMessage.add(m); // motor 0
     myMessage.add(STARTUP_MAX_SPEED);  // speed must be float!
     oscP5.send(myMessage, myRemoteLocation);
     
     myMessage = new OscMessage("/maxaccel");
-    myMessage.add(m); // motor 0
+    //myMessage.add(m); // motor 0
     myMessage.add(MAX_ACCEL);  // speed must be float!
     oscP5.send(myMessage, myRemoteLocation);
     
     
-  }
+  //}
 }
 
 
@@ -343,12 +343,12 @@ void mouseDragged() {
   
   if (!max_speed_sent) {
     max_speed_sent = true;
-    for (int m=0; m<NUM_MOTORS; m++) {
+    //for (int m=0; m<NUM_MOTORS; m++) {
       OscMessage myMessage = new OscMessage("/maxspeed");
-      myMessage.add(m); // motor 0
+      //myMessage.add(m); // motor 0
       myMessage.add(MAX_SPEED);  // speed must be float!
       oscP5.send(myMessage, myRemoteLocation);
-    }
+    //}
   }
   
   float range = mouseRange; 

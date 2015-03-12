@@ -529,7 +529,7 @@ void oscHome(OscMessage &m) {
 
 void oscSetMaxSpeed(OscMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
-    MAX_SPEED = m.getFloat(1);
+    MAX_SPEED = m.getFloat(m.size()-1);
     pidSetMaxSpeed(MAX_SPEED);
   }
 }
@@ -537,7 +537,7 @@ void oscSetMaxSpeed(OscMessage &m) {
 
 void oscSetMaxAccel(OscMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
-    MAX_ACCEL = m.getFloat(1);
+    MAX_ACCEL = m.getFloat(m.size()-1);
   }
 }
 
