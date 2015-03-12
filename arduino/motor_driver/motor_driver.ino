@@ -45,7 +45,9 @@ const int LOCALNET = 2; // 2 for osx internet sharing 192.168.2.*, 1 for NYCR ne
 double pidSetpoint, pidInput, pidOutput;
 const double consKp=0.08, consKi=0.012, consKd=0.00001;
 PID myPID(&pidInput, &pidOutput, &pidSetpoint, consKp, consKi, consKd, REVERSE); // DIRECT or REVERSE
-int CLOSE_ENOUGH = 15; // stop motor if within +/- desired position in encoder steps
+// Dead zone: stop motor if within +/- desired position in encoder steps
+int STILL_DEAD_ZONE = 15; // when desired velocity is 0, big dead zone
+int MOVING_DEAD_ZONE = 2; // when moving, smaller dead zone (so slow movements aren't jerky as they jump from one dead zone to the next)
 
 
 // ENCODER SETUP ---------------------------
@@ -152,6 +154,7 @@ void setup() {
 unsigned long lastmicros = micros();
 unsigned long lastStatusMsgMillis = millis();
 long laststepperpos = 0, lastencoder0Pos = 0;
+double lastSetpoint = 0;
 
 void loop(){ 
   
@@ -164,7 +167,12 @@ void loop(){
   if (state==OK) {
     // PID loop
     pidInput = encoder0Pos;
-    if (abs(pidInput-pidSetpoint) < CLOSE_ENOUGH) {
+    // use big dead zone only if setpoint hasn't changed; ie desired speed is 0
+    if (
+         (lastSetpoint == pidSetpoint && abs(pidInput-pidSetpoint) < STILL_DEAD_ZONE)
+      || (lastSetpoint != pidSetpoint && abs(pidInput-pidSetpoint) < MOVING_DEAD_ZONE)
+       ) 
+    {
       goalSpeed = 0;
     }
     else {
@@ -176,6 +184,7 @@ void loop(){
   else if (state==NOTHOMED) {
     goalSpeed = 0;
   }
+  lastSetpoint = pidSetpoint;
   
   
   int endstop = digitalRead(EXTENSIONENDSTOPPIN);
@@ -541,10 +550,11 @@ void oscSetMaxAccel(OscMessage &m) {
   }
 }
 
-
+// /deadzone [motorID] stillDeadZone movingDeadZone
 void oscSetDeadZone(OscMessage &m) {
-  if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
-    CLOSE_ENOUGH = m.getInt(m.size()-1);
+  if (m.size()==2 || (m.size()==3 && m.getInt(0)==MOTOR_ID)) {
+    STILL_DEAD_ZONE = m.getInt(m.size()-2);
+    MOVING_DEAD_ZONE = m.getInt(m.size()-1);
   }
 }
 

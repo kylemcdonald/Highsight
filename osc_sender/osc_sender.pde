@@ -197,6 +197,10 @@ void setup() {
     myMessage.add(MAX_ACCEL);  // speed must be float!
     oscP5.send(myMessage, myRemoteLocation);
     
+    myMessage = new OscMessage("/deadzone");
+    myMessage.add(15);
+    myMessage.add(4);
+    oscP5.send(myMessage, myRemoteLocation);
     
   //}
 }

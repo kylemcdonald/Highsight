@@ -94,17 +94,22 @@ Get back in service after e-stop - can address all motors (no argument) or just 
 ### set one or all motors' dead zone (in encoder steps)
 If encoder is within +/- dead zone of goal, PID calls it good enough and doesn't try to refine further. Default 15 encoder units. Don't make it too small or motors will hunt back and forth forever.
 
+Still dead zone when speed is 0 - have a larger zone (eg 15) so that motor doesn't keep seeking to try to get unimportant precise placement.
+Moving dead zone is for speed > 0 - smaller zone (e.g. 4) allows smoother slow movements.
+
 All motors:
 ```
 /deadzone
-	int dz	# positive integer 
+	int still	# positive integer 
+	int moving
 ```
 
 One motor:
 ```
 /deadzone
 	int motorID
-	int dz
+	int still
+	int moving
 ```
 
 
