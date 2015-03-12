@@ -85,6 +85,21 @@ Get back in service after e-stop - can address all motors (no argument) or just 
 	float maxAccel
 ```
 
+### set one or all motors' dead zone (in encoder steps)
+If encoder is within +/- dead zone of goal, PID calls it good enough and doesn't try to refine further. Default 15 encoder units. Don't make it too small or motors will hunt back and forth forever.
+
+All motors:
+```
+/deadzone
+	int dz	# positive integer 
+```
+
+One motor:
+```
+/deadzone
+	int motorID
+	int dz
+```
 
 
 ### power control 

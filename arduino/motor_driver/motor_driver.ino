@@ -45,7 +45,7 @@ const int LOCALNET = 2; // 2 for osx internet sharing 192.168.2.*, 1 for NYCR ne
 double pidSetpoint, pidInput, pidOutput;
 const double consKp=0.08, consKi=0.012, consKd=0.00001;
 PID myPID(&pidInput, &pidOutput, &pidSetpoint, consKp, consKi, consKd, REVERSE); // DIRECT or REVERSE
-const int CLOSE_ENOUGH = 15; // stop motor if within +/- desired position in encoder steps
+int CLOSE_ENOUGH = 15; // stop motor if within +/- desired position in encoder steps
 
 
 // ENCODER SETUP ---------------------------
@@ -483,6 +483,7 @@ void oscEvent(OscMessage &m) {
   m.plug("/home", oscHome);
   m.plug("/maxspeed", oscSetMaxSpeed); 
   m.plug("/maxaccel", oscSetMaxAccel);
+  m.plug("/deadzone", oscSetDeadZone);
   
   m.plug("/stop", oscStop);
   m.plug("/resume", oscResume);
@@ -539,6 +540,15 @@ void oscSetMaxAccel(OscMessage &m) {
     MAX_ACCEL = m.getFloat(1);
   }
 }
+
+
+void oscSetDeadZone(OscMessage &m) {
+  if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
+    CLOSE_ENOUGH = m.getInt(m.size()-1);
+  }
+}
+
+
 
 
 // STOP: 
