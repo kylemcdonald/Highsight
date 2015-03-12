@@ -1,19 +1,45 @@
 <xml>
     <motors>
         <speed> <!-- cm / s -->
-            <max>100</max>
+            <max>50</max>
         </speed>
         <osc>
-            <host>localhost</host>
+            <host>192.168.2.255</host>
             <sendPort>12001</sendPort>
-            <receivePort>1200</receivePort>
+            <receivePort>12000</receivePort>
         </osc>
-        <ids>
-            <nw>3</nw>
-            <ne>0</ne>
-            <se>1</se>
-            <sw>2</sw>
-        </ids>
+        <nw>
+            <id>3</id>
+            <unitsPerCm>179</unitsPerCm>
+            <refPoint>
+                <cm>155</cm>
+                <units>30656</units>
+            </refPoint>
+        </nw>
+        <ne>
+            <id>0</id>
+            <unitsPerCm>179</unitsPerCm>
+            <refPoint>
+                <cm>145</cm>
+                <units>25112</units>
+            </refPoint>
+        </ne>
+        <se>
+            <id>1</id>
+            <unitsPerCm>179</unitsPerCm>
+            <refPoint>
+                <cm>199</cm>
+                <units>5179</units>
+            </refPoint>
+        </se>
+        <sw>
+            <id>2</id>
+            <unitsPerCm>179</unitsPerCm>
+            <refPoint>
+                <cm>218</cm>
+                <units>776</units>
+            </refPoint>
+        </sw>
     </motors>
     <oculus>
         <osc>

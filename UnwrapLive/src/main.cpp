@@ -13,7 +13,7 @@ public:
 	void setup() {
 		ofSetLogLevel(OF_LOG_VERBOSE);
 		cam.setup(1920, 1080, 29.97f);
-        fisheye.setup(cam.getColorTexture());
+        fisheye.setup();
 	}
 	void exit() {
 		cam.close();
@@ -31,7 +31,7 @@ public:
         easyCam.begin();
         ofEnableDepthTest();
         ofScale(100, 100, 100);
-        fisheye.draw(cam.getColorTexture(), true);
+        fisheye.draw(cam.getColorTexture());
         easyCam.end();
         
         ofDisableDepthTest();
