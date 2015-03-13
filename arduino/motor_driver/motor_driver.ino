@@ -51,10 +51,10 @@ int MOVING_DEAD_ZONE = 2; // when moving, smaller dead zone (so slow movements a
 
 
 // ENCODER SETUP ---------------------------
-// encoder on 2 and 3
-const int encoder0PinA = 2;
-const int encoder0PinB = 3;
-const int encoder0PinZ = 4;
+// encoder on 2 and 3   // +5 is brown, ground is blue
+const int encoder0PinA = 2;  // white
+const int encoder0PinB = 3;  // black
+const int encoder0PinZ = 4;  // orange
 volatile long encoder0Pos = 0;
 volatile long encoder0Zero = 0;
 volatile long encoder0ZeroState = 0;
