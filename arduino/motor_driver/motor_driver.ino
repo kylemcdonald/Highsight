@@ -223,6 +223,7 @@ void loop(){
     
     else {
       state=ENDSTOP;
+      homed = false;
       goalSpeed = 0;
     }
   }
@@ -476,7 +477,10 @@ void sendOscStatus(long stepper, long encoder) {
       msg.add("STOPPED");
       break;
     case MOTOROFF:
-      msg.add("MOTOROFF");
+      if (homed) 
+        msg.add("MOTOROFF");
+      else
+        msg.add("NOTHOMED-OFF");
       break;
       
     default:  

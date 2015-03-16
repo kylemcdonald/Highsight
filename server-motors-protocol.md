@@ -134,11 +134,22 @@ One motor:
 
 ## Motors to server
 
-### status report, sent frequently:
+### status report, sent frequently.
+
+Possible states:
+
+* OK - homed and ready to go
+* NOTHOMED - hasn't been homed, don't trust position report
+* NOTHOMED-OFF - same, and the motor is turned off
+* MOTOROFF - motor is turned off (but has been homed)
+* HOMING, HOMINGBACKOFF - in the process of homing
+* ENDSTOP - hit the endstop unexpectedly, will have to be re-homed.
+* STOPPED - stop mode
+
 ```
 /status
 	int motorID
-	string state	# OK, NOTHOMED, HOMING, HOMINGBACKOFF, or ENDSTOP. Not yet implemented: STOPPED, POWEROFF, HOMINGERROR
+	string state	# see list above
 	float position	# in encoder steps
 	float velocity	# in approximate cm/sec
 	
