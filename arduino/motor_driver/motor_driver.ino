@@ -132,7 +132,7 @@ enum stateEnum {
   OK,               // all is well, ready for motion commands
   STOPPED,          // stopped by /stop command
   ENDSTOP,          // unexpectedly hit the end stop, need to home again
-  MOTOROFF          // motor power off by /disable command, need to home again
+  MOTOROFF         // motor power off by /disable command
 } state = MOTOROFF;
 
 
