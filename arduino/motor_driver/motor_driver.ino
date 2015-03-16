@@ -187,8 +187,6 @@ void loop(){
   lastSetpoint = pidSetpoint;
   
   
-  int endstop = digitalRead(EXTENSIONENDSTOPPIN);
-  
   if (state==HOMING) {
     goalSpeed = homingSpeed;
   }
@@ -206,17 +204,21 @@ void loop(){
   }
 
   // check end stop
+  int endstop = digitalRead(EXTENSIONENDSTOPPIN);
+  
+  bool manualSpeed = false;
+  
   if (endstop) {
     if (state==HOMING) {
       state=HOMINGBACKOFF;
       encoder0Pos = -BACKOFF_STEPS;
-      return;
+      manualSpeed = true;
     }
     else if (state==HOMINGBACKOFF) {
-      return;
+      manualSpeed = true;
     }
     else if (state==MOTOROFF) {
-      return;
+      manualSpeed = true;
     }
     
     else {
@@ -226,11 +228,13 @@ void loop(){
   }
   
   
-  // update speed from goalspeed taking acceleration limit into account
-  unsigned long dt = micros() - lastmicros;
-  lastmicros = micros();
-  
-  updateSpeed(dt);
+  if (!manualSpeed) {
+    // update speed from goalspeed taking acceleration limit into account
+    unsigned long dt = micros() - lastmicros;
+    lastmicros = micros();
+    
+    updateSpeed(dt);
+  }
   
   
 
