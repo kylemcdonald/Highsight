@@ -11,10 +11,10 @@
 
 #define inchesToCm(x) (x * 2.54f)
 
-//const float width = 634, depth = 664, height = 420;
-const float width = inchesToCm(74.5), depth = inchesToCm(111.5), height = inchesToCm(69);
+const float width = 607, depth = 608, height = 357;
+//const float width = inchesToCm(74.5), depth = inchesToCm(111.5), height = inchesToCm(69);
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
-const float eyeStartHeight = 115;
+const float eyeStartHeight = 0;
 //const float eyeWidth = 1.25, eyeDepth = 1.25, attachHeight = 0;
 const float eyeWidth = 7.6, eyeDepth = 7.6, attachHeight = 0;
 const float eyePadding = 0;
