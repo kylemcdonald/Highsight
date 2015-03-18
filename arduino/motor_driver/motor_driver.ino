@@ -273,6 +273,7 @@ void loop(){
 
 void setupWatchdog() {
   OscMessage msg("/crashreport");
+  msg.add(MOTOR_ID);
   ApplicationMonitor.Dump(msg);
   ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_4s);
   etherOSC.send(msg, destination);
