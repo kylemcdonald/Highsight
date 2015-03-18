@@ -20,17 +20,21 @@ float MAX_ACCEL = 250.0; // approx cm/sec/sec
 
 
 // mouse interface
-float mouseRange = 40;
+float mouseRange = 5;
 float boxSize = 500;
 
 // timeout
 int lastMessageTime[] = new int[NUM_MOTORS]; 
 
+// message counter
+int messageNumber = 0;
+int lastReceivedMessageNumber[] = new int[NUM_MOTORS];
+
 
 // smoothing
 class Smoother {
-  double x=0,y=0,z=52;
-  double goalx=0, goaly=0, goalz=52;
+  double x=0,y=0,z=0;
+  double goalx=0, goaly=0, goalz=0;
   double vx=0,vy=0,vz=0;
   double max_vel = 12.0; // in room units (inches for this test) per second
   //float max_acc = 50.0; // ditto
@@ -78,7 +82,7 @@ class Smoother {
 
 
 // origin of room coordinates
-float CENTERPOINT[] = {40, 55, 0}; // on the floor, approx centered between motors
+float CENTERPOINT[] = {0,0,0}; // on the floor, approx centered between motors
 // table height is about 45, will bump table below z=45
 
 
@@ -139,17 +143,17 @@ float stepsPerInch = 454;
 
 void setupWinches() {
   //NW                 motorID  pos in room   rope length calibration    support point 
-  winches[0] = new Winchbot(3,  4, 111, 69,   stepsPerInch, 27355, 68    , -1, 1, 0); // inches
+  winches[0] = new Winchbot(3,  4, 111, 69,   stepsPerInch, 500, 12    , -1, 1, 0); // inches
   //winches[0] = new Winchbot(3,  -7, 108.75, 69,   stepsPerInch, 13400, 97    , -1, 1, 0); // inches
   //NE
-  winches[1] = new Winchbot(0,  80, 111, 69,  stepsPerInch, 24229, 54.5    , 1, 1, 0);
+  winches[1] = new Winchbot(0,  80, 111, 69,  stepsPerInch, 500, 12    , 1, 1, 0);
   //winches[1] = new Winchbot(0,  73.75, 111, 69,  stepsPerInch, 13200, 79    , 1, 1, 0);
   //SE
   //winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
-  winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 7865, 72    , 1, -1, 0);
+  winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 500, 12    , 1, -1, 0);
   //winches[2] = new Winchbot(1,  74.5, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
   //SW
-  winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 6820, 72.75    , -1, -1, 0);
+  winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 500, 12    , -1, -1, 0);
   //winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 13290, 58    , -1, -1, 0);
 }
 
@@ -247,13 +251,13 @@ void transmitPositions(float x, float y, float z) {
     positions[winches[i].motorID] = winches[i].positionToSteps(x,y,z);
   }
       
-  
+  /*
   println(x, y, z, " -> ", 
     winches[0].distanceFrom(x,y,z), winches[1].distanceFrom(x,y,z), 
     winches[2].distanceFrom(x,y,z), winches[3].distanceFrom(x,y,z),
     " ---> ",
     positions[0], positions[1], positions[2], positions[3]);
-  
+  */
   sendPos(positions[0], positions[1], positions[2], positions[3]);
  
 }
@@ -312,7 +316,7 @@ void sendHome(int motorID) {
   
 }
 
-float x=0, y=0, z = 52;
+float x=0, y=0, z = 0;
 void keyPressed() {
   println("keyPressed: ", key);
   switch (key) {
@@ -326,8 +330,8 @@ void keyPressed() {
       return; // don't call mouseDragged
   }
   
-  if (z < 36) z = 36;
-  if (z > 60) z = 60;
+  if (z < 0) z = 0;
+  if (z > 12) z = 12;
   
   smoother.setGoal(x, y, z);
   
@@ -411,6 +415,9 @@ boolean sendPos(float pos0, float pos1, float pos2, float pos3) {
   myMessage.add(pos1);
   myMessage.add(pos2);
   myMessage.add(pos3);
+  myMessage.add(messageNumber++);
+  
+  if (messageNumber > 32000) messageNumber = 0;
   
   oscP5.send(myMessage, myRemoteLocation);
   
@@ -437,18 +444,31 @@ void oscEvent(OscMessage theOscMessage) {
     
     int steps = theOscMessage.get(4).intValue();
     int encs = theOscMessage.get(5).intValue();
+
+    if (theOscMessage.arguments().length >= 7) {  
+      int serial = theOscMessage.get(6).intValue();
+      int skipped = serial - lastReceivedMessageNumber[motor];
+      lastReceivedMessageNumber[motor] = serial;
     
+      if (skipped != 1) {
+        println("MOTOR " + motor + " serial skipped " + skipped);
+      }
+    }
+
+    /*
     if (encs < steps || encs > steps * 8) {
       println("SLIP!");
     }
-  
+    */
     
     poslabels[motor].setText(""+pos);
     statelabels[motor].setText(state);
     lastMessageTime[motor] = millis();
     
+    /*
     println("Motor " + motor + " " + state + " pos " + pos + " and speed " + speed + " steps " 
       + steps + " encs " + encs);
+    */
   }
   else println("hey");
 }
