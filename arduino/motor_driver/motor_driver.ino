@@ -468,6 +468,7 @@ void oscEvent(OscMessage &m) {
   m.plug("/resume", oscResume);
   
   m.plug("/statusinterval", oscSetStatusInterval);
+  m.plug("/serveraddress", oscSetServerAddress);
   
   m.plug("/motor", oscSetMotorPower);
   
@@ -535,6 +536,16 @@ void oscSetStatusInterval(OscMessage &m) {
     if (msec<3 || msec>200) return;
     MSEC_PER_STATUS = msec;
   }
+}
+
+// serveraddress int,int,int,int to make the IP address
+void oscSetServerAddress(OscMessage &m) {
+  if (m.size()==4 || (m.size()==5 && m.getInt(0)==MOTOR_ID)) {
+    for (int i=0; i<4; i++) {
+      destinationIP[i] = m.getInt(m.size()-4+i);
+      destination.set(destinationIP, destinationPort);
+    }
+  }  
 }
 
 

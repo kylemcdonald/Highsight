@@ -143,6 +143,16 @@ Set the time delay between status messages, in msec
 	int interval
 ```
 
+### server IP address
+Sets the destination IP address for /status messages
+
+```
+/serveraddress
+	int, int, int, int // the four bytes of the IP address
+/serveraddress
+	int motorID
+	int, int, int, int
+```
 
 
 ## Motors to server
