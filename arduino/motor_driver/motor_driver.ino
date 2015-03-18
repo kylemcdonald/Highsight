@@ -52,8 +52,11 @@ int MOVING_DEAD_ZONE = 2; // when moving, smaller dead zone (so slow movements a
 
 // ENCODER SETUP ---------------------------
 // encoder on 2 and 3   // +5 is brown, ground is blue
-const int encoder0PinA = 2;  // white
-const int encoder0PinB = 3;  // black
+#define ENCODER_PORT PORTD
+const int encoder0PinA = 2;  // white   PORTD BIT 2
+const byte encoder0PinAMask = 0x04;
+const int encoder0PinB = 3;  // black   PORTD BIT 3
+const byte encoder0PinBMask = 0x08;
 const int encoder0PinZ = 4;  // orange
 volatile long encoder0Pos = 0;
 volatile long encoder0Zero = 0;
@@ -114,9 +117,6 @@ int destinationPort = 12000;
 
 EthernetUDP UDP;
 OscUDP etherOSC;  
-
-// message serial numbers to check for missing ones
-int messageNumber = 0;
 
 int MSEC_PER_STATUS = 50; // millseconds between sending status messages
 
@@ -273,7 +273,6 @@ void loop(){
 
 void setupWatchdog() {
   OscMessage msg("/crashreport");
-  msg.add(MOTOR_ID);
   ApplicationMonitor.Dump(msg);
   ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_4s);
   etherOSC.send(msg, destination);
@@ -306,9 +305,7 @@ void setupEncoder() {
   pinMode(encoder0PinB, INPUT); 
   pinMode(encoder0PinZ, INPUT);
   // encoder pin on interrupt 0 (pin 2)
-  attachInterrupt(0, doEncoderA, CHANGE);
-  // encoder pin on interrupt 1 (pin 3)
-  attachInterrupt(1, doEncoderB, CHANGE);  
+  attachInterrupt(0, doEncoderA, RISING);
 }
 
 void setupMotorDriver() {
@@ -392,62 +389,21 @@ void motorEnable(bool power) {
 // ENCODER HANDLERS -----------------------------
 
 
-
-void doEncoderA(){
-
-  // look for a low-to-high on channel A
-  if (digitalRead(encoder0PinA) == HIGH) { 
-    // check channel B to see which way encoder is turning
-    if (digitalRead(encoder0PinB) == LOW) {  
-      encoder0Pos = encoder0Pos + 1;         // CW
-    } 
-    else {
-      encoder0Pos = encoder0Pos - 1;         // CCW
-    }
+// triggered on rising encoder A
+void doEncoderA() {
+  /* via Trammell:
+      For the quadrature, you can also just trigger on the rising edge of one
+    line. When it goes high, you then sample the other line as soon as possible.
+    If it is already high, then you are going clockwise.  If it is still low,
+    then you're going anti-clockwise.
+  */
+  if (ENCODER_PORT & encoder0PinBMask) {
+    encoder0Pos ++;
   }
-  else   // must be a high-to-low edge on channel A                                       
-  { 
-    // check channel B to see which way encoder is turning  
-    if (digitalRead(encoder0PinB) == HIGH) {   
-      encoder0Pos = encoder0Pos + 1;          // CW
-    } 
-    else {
-      encoder0Pos = encoder0Pos - 1;          // CCW
-    }
-  }
-  
-  // mark Z
-  int zeropin = digitalRead(encoder0PinZ);
-  if (encoder0ZeroState == 0 && zeropin == 1) {
-    encoder0Zero = encoder0Pos;
-  }
-  encoder0ZeroState = zeropin;
-}
-
-void doEncoderB(){
-
-  // look for a low-to-high on channel B
-  if (digitalRead(encoder0PinB) == HIGH) {   
-   // check channel A to see which way encoder is turning
-    if (digitalRead(encoder0PinA) == HIGH) {  
-      encoder0Pos = encoder0Pos + 1;         // CW
-    } 
-    else {
-      encoder0Pos = encoder0Pos - 1;         // CCW
-    }
-  }
-  // Look for a high-to-low on channel B
-  else { 
-    // check channel B to see which way encoder is turning  
-    if (digitalRead(encoder0PinA) == LOW) {   
-      encoder0Pos = encoder0Pos + 1;          // CW
-    } 
-    else {
-      encoder0Pos = encoder0Pos - 1;          // CCW
-    }
+  else {
+    encoder0Pos --;
   }
 }
-
 
 
 
@@ -497,9 +453,6 @@ void sendOscStatus(long stepper, long encoder) {
   msg.add(stepper);
   msg.add(encoder);
   
-  msg.add(messageNumber++);
-  if (messageNumber > 32000) messageNumber = 0;
-  
   etherOSC.send(msg, destination);
 }
 
@@ -521,9 +474,8 @@ void oscEvent(OscMessage &m) {
 
 
 void oscGo(OscMessage &m) {
-  // /go/motor0pos,motor1pos,motor2pos,motor3pos floats
+  // /go/motor0pos,motor1pos,motor2pos,motor3pos long ints
   if (state != OK) return; 
-  if (m.size() < 4) return; 
   
   double value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
