@@ -320,7 +320,7 @@ void setupMotorDriver() {
   Timer1.pwm(PULSEPIN, 0);
   Timer1.start();
   
-  Timer1.attachInterrupt(countSteps);
+  //Timer1.attachInterrupt(countSteps);
 }
 
 void setupEndstops() {
