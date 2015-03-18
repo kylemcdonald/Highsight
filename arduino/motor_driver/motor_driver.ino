@@ -115,6 +115,9 @@ int destinationPort = 12000;
 EthernetUDP UDP;
 OscUDP etherOSC;  
 
+// message serial numbers to check for missing ones
+int messageNumber = 0;
+
 int MSEC_PER_STATUS = 50; // millseconds between sending status messages
 
 // WATCHDOG TIMER ---------
@@ -493,6 +496,9 @@ void sendOscStatus(long stepper, long encoder) {
   msg.add(stepper);
   msg.add(encoder);
   
+  msg.add(messageNumber++);
+  if (messageNumber > 32000) messageNumber = 0;
+  
   etherOSC.send(msg, destination);
 }
 
@@ -514,8 +520,9 @@ void oscEvent(OscMessage &m) {
 
 
 void oscGo(OscMessage &m) {
-  // /go/motor0pos,motor1pos,motor2pos,motor3pos long ints
+  // /go/motor0pos,motor1pos,motor2pos,motor3pos floats
   if (state != OK) return; 
+  if (m.size() < 4) return; 
   
   double value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
