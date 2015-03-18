@@ -146,18 +146,23 @@ float stepsPerCM = 179;
 
 void setupWinches() {
   //NW                 motorID  pos in room             steps to rope length     support point 
-  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 46430, 560,     -10, 10, 0); // cm
+  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 56833, 505,     -10, 10, 0); // cm
   //NE
-  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 47964, 546,      10, 10, 0);
+  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 55058, 503,      10, 10, 0);
   //SE
-  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 54286, 513,      10, -10, 0);
+  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 54695, 512,      10, -10, 0);
   //SW
-  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 45002, 565,     -10, -10, 0);
+  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 45187, 514,     -10, -10, 0);
 }
 
 
 Textlabel poslabels[] = new Textlabel[NUM_MOTORS];
 Textlabel statelabels[] = new Textlabel[NUM_MOTORS];
+
+Textlabel xlabel;// = new Textlabel();
+Textlabel ylabel;// = new Textlabel();
+Textlabel zlabel;// = new Textlabel();
+
 Smoother smoother = new Smoother();
 
 void setup() {
@@ -180,6 +185,10 @@ void setup() {
     poslabels[i] = cp5.addTextlabel("pos"+i).setPosition(60+90*i, 50);
     statelabels[i] = cp5.addTextlabel("state"+i).setPosition(60+90*i, 35);
   }
+  
+  xlabel = cp5.addTextlabel("xpos"+1).setPosition(10,500);
+  ylabel = cp5.addTextlabel("ypos"+1).setPosition(10,515);
+  zlabel = cp5.addTextlabel("zpos"+1).setPosition(10,530);
   
   /* start oscP5, listening for incoming messages at port 12000 */
   oscP5 = new OscP5(this,12000);
@@ -248,7 +257,10 @@ void transmitPositions(float x, float y, float z) {
   for (int i=0; i<NUM_MOTORS; i++) {
     positions[winches[i].motorID] = winches[i].positionToSteps(x,y,z);
   }
-      
+  
+  xlabel.setText("X=" + x);
+  ylabel.setText("Y=" + y);
+  zlabel.setText("Z=" + z);  
   
   /*
   println(x, y, z, " -> ", 
@@ -325,7 +337,7 @@ void keyPressed() {
   }
   
   if (z < 20) z = 20;
-  if (z > 200) z = 300;
+  if (z > 300) z = 300;
   
   smoother.setGoal(x, y, z);
   
@@ -364,8 +376,8 @@ void mouseDragged() {
   if (x > range/2) x = range/2;
   if (y < -range/2) y = -range/2;
   if (y > range/2) y = range/2;
-  if (z < 36) z = 36;
-  if (z > 60) z = 60;
+  if (z < 20) z = 20;
+  if (z > 300) z = 300;
   
   smoother.setGoal(x, y, z);
   
