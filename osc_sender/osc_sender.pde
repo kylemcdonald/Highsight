@@ -146,13 +146,13 @@ float stepsPerCM = 179;
 
 void setupWinches() {
   //NW                 motorID  pos in room             steps to rope length     support point 
-  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 4544, 796,     -1, 1, 0); // cm
+  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 46430, 560,     -1, 1, 0); // cm
   //NE
-  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 3930, 792,      1, 1, 0);
+  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 47964, 546,      1, 1, 0);
   //SE
-  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 4038, 790,      1, -1, 0);
+  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 54286, 513,      1, -1, 0);
   //SW
-  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 4657, 789,     -1, -1, 0);
+  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 45002, 565,     -1, -1, 0);
 }
 
 
@@ -314,10 +314,10 @@ void sendHome(int motorID) {
 float x=0, y=0, z = 0;
 void keyPressed() {
   switch (key) {
-    case 'i': z += 1;
+    case 'i': z += 3;
       break;
       
-    case 'k': z -= 1;
+    case 'k': z -= 3;
       break;
       
     default:
@@ -325,7 +325,7 @@ void keyPressed() {
   }
   
   if (z < 20) z = 20;
-  if (z > 200) z = 200;
+  if (z > 200) z = 300;
   
   smoother.setGoal(x, y, z);
   
