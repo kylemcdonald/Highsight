@@ -9,6 +9,8 @@ NetAddress myRemoteLocation;
 
 String state = "ok";
 
+float STARTX = 0, STARTY = 0, STARTZ = 20;
+
 
 int NUM_MOTORS = 4;
 
@@ -20,7 +22,7 @@ float MAX_ACCEL = 250.0; // approx cm/sec/sec
 
 
 // mouse interface
-float mouseRange = 5;
+float mouseRange = 100;// +/- 100cm
 float boxSize = 500;
 
 // timeout
@@ -33,10 +35,10 @@ int lastReceivedMessageNumber[] = new int[NUM_MOTORS];
 
 // smoothing
 class Smoother {
-  double x=0,y=0,z=0;
-  double goalx=0, goaly=0, goalz=0;
+  double x=STARTX,y=STARTY,z=STARTZ;
+  double goalx=STARTX, goaly=STARTY, goalz=STARTZ;
   double vx=0,vy=0,vz=0;
-  double max_vel = 12.0; // in room units (inches for this test) per second
+  double max_vel = 30.0; // in room units (cm for this test) per second
   //float max_acc = 50.0; // ditto
 
   void setPos(double _x, double _y, double _z) {
@@ -82,8 +84,8 @@ class Smoother {
 
 
 // origin of room coordinates
-float CENTERPOINT[] = {0,0,0}; // on the floor, approx centered between motors
-// table height is about 45, will bump table below z=45
+float CENTERPOINT[] = {0,0,0}; // at the floor, approx centered between motors
+
 
 
 class Winchbot {
@@ -140,21 +142,17 @@ Winchbot winches[] = new Winchbot[NUM_MOTORS];
 //    more careful measurements: about 450-459 
 
 float stepsPerInch = 454; 
+float stepsPerCM = 179;
 
 void setupWinches() {
-  //NW                 motorID  pos in room   rope length calibration    support point 
-  winches[0] = new Winchbot(3,  4, 111, 69,   stepsPerInch, 500, 12    , -1, 1, 0); // inches
-  //winches[0] = new Winchbot(3,  -7, 108.75, 69,   stepsPerInch, 13400, 97    , -1, 1, 0); // inches
+  //NW                 motorID  pos in room             steps to rope length     support point 
+  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 4544, 796,     -1, 1, 0); // cm
   //NE
-  winches[1] = new Winchbot(0,  80, 111, 69,  stepsPerInch, 500, 12    , 1, 1, 0);
-  //winches[1] = new Winchbot(0,  73.75, 111, 69,  stepsPerInch, 13200, 79    , 1, 1, 0);
+  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 3930, 792,      1, 1, 0);
   //SE
-  //winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
-  winches[2] = new Winchbot(1,  78, 0, 69,    stepsPerInch, 500, 12    , 1, -1, 0);
-  //winches[2] = new Winchbot(1,  74.5, 0, 69,    stepsPerInch, 13200, 60    , 1, -1, 0);
+  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 4038, 790,      1, -1, 0);
   //SW
-  winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 500, 12    , -1, -1, 0);
-  //winches[3] = new Winchbot(2,   0, 0, 69,    stepsPerInch, 13290, 58    , -1, -1, 0);
+  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 4657, 789,     -1, -1, 0);
 }
 
 
@@ -251,6 +249,7 @@ void transmitPositions(float x, float y, float z) {
     positions[winches[i].motorID] = winches[i].positionToSteps(x,y,z);
   }
       
+  
   /*
   println(x, y, z, " -> ", 
     winches[0].distanceFrom(x,y,z), winches[1].distanceFrom(x,y,z), 
@@ -265,17 +264,13 @@ void transmitPositions(float x, float y, float z) {
 
 // button handlers
 public void HOME0(int val) {
-  println("HOME 0 BUTTON");
   sendHome(0);
 }  public void HOME1(int val) {
-  println("HOME 1 BUTTON");
   sendHome(1);
 }  
 public void HOME2(int val) {
-  println("HOME 2 BUTTON");
   sendHome(2);
 }  public void HOME3(int val) {
-  println("HOME 3 BUTTON");
   sendHome(3);
 }  
 public void STOP(int val) {
@@ -318,7 +313,6 @@ void sendHome(int motorID) {
 
 float x=0, y=0, z = 0;
 void keyPressed() {
-  println("keyPressed: ", key);
   switch (key) {
     case 'i': z += 1;
       break;
@@ -330,8 +324,8 @@ void keyPressed() {
       return; // don't call mouseDragged
   }
   
-  if (z < 0) z = 0;
-  if (z > 12) z = 12;
+  if (z < 20) z = 20;
+  if (z > 200) z = 200;
   
   smoother.setGoal(x, y, z);
   
@@ -375,26 +369,6 @@ void mouseDragged() {
   
   smoother.setGoal(x, y, z);
   
-  /*
-  
-  float positions[] = new float[4];
-  for (int i=0; i<4; i++) {
-    positions[winches[i].motorID] = winches[i].positionToSteps(x,y,z);
-  }
-      
-  
-  println(x, y, z, " -> ", 
-    winches[0].distanceFrom(x,y,z), winches[1].distanceFrom(x,y,z), 
-    winches[2].distanceFrom(x,y,z), winches[3].distanceFrom(x,y,z),
-    " ---> ",
-    positions[0], positions[1], positions[2], positions[3]);
-  
-  sendPos(positions[0], positions[1], positions[2], positions[3]);
-  
-  
-  */
-  
-  //sendPos(400,400,400,mouseY*100);
   
 }
 
@@ -470,5 +444,30 @@ void oscEvent(OscMessage theOscMessage) {
       + steps + " encs " + encs);
     */
   }
-  else println("hey");
+  else if (addr.equals("/crashreport")) {
+    int motor, address, data;
+    if (theOscMessage.arguments().length == 2) {
+      // obsolete crash report
+      motor = -1; //theOscMessage.get(0).intValue();
+      address = theOscMessage.get(0).intValue();
+      data = theOscMessage.get(1).intValue();
+      println("CRASH REPORT motor unknown, address " + address + " words, " + (address*2) + " bytes, data " + data);
+    } else if (theOscMessage.arguments().length==3) {
+      motor = theOscMessage.get(0).intValue();
+      address = theOscMessage.get(1).intValue();
+      data = theOscMessage.get(2).intValue();
+      println("CRASH REPORT motor " + motor + " address " + address + " words, " + (address*2) + " bytes, data " + data);
+          
+    }
+    else {
+      print("CRASH REPORT?? ");
+      for (int i=0; i<theOscMessage.arguments().length; i++) {
+        print("arg " + i + "=" + theOscMessage.get(i).intValue() + "  ");
+      }
+      println();
+    }
+
+    
+  }
+  else println("HEY, unknown message from a motor: " + addr);
 }
