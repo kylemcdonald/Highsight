@@ -132,6 +132,19 @@ One motor:
 ```
 
 
+### status report interval
+Set the time delay between status messages, in msec
+
+```
+/statusinterval
+	int interval (in msec)
+/statusinterval
+	int motorID
+	int interval
+```
+
+
+
 ## Motors to server
 
 ### status report, sent frequently.

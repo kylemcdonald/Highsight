@@ -467,6 +467,8 @@ void oscEvent(OscMessage &m) {
   m.plug("/stop", oscStop);
   m.plug("/resume", oscResume);
   
+  m.plug("/statusinterval", oscSetStatusInterval);
+  
   m.plug("/motor", oscSetMotorPower);
   
   m.plug("/crashtest", oscCrash);
