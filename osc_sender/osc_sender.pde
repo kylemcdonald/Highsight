@@ -7,7 +7,7 @@ ControlP5 cp5;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 
-int[] myLocalAddress = {192,168,2,1};
+int[] myLocalAddress = {192,168,2,100};
 
 
 String state = "ok";
@@ -25,7 +25,7 @@ float MAX_ACCEL = 250.0; // approx cm/sec/sec
 
 
 // mouse interface
-float mouseRange = 100;// +/- 100cm
+float mouseRange = 300;// +/- 100cm
 float boxSize = 500;
 
 // timeout
@@ -150,13 +150,13 @@ float stepsPerCM = 179 / 4.0;
 
 void setupWinches() {
   //NW                 motorID  pos in room             steps to rope length     support point 
-  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 13267, 523,     -7.6, 7.6, 0); // cm
+  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 14585, 532,     -7.6, 7.6, 0); // cm
   //NE
-  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 13163, 518,      7.6, 7.6, 0);
+  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 14007, 499,      7.6, 7.6, 0);
   //SE
-  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 13208, 521,      7.6, -7.6, 0);
+  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 13804, 506,      7.6, -7.6, 0);
   //SW
-  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 13226, 521,     -7.6, -7.6, 0);
+  winches[3] = new Winchbot(2,   -304.5, -303.5, 357,  stepsPerCM, 12463, 533,     -7.6, -7.6, 0);
 }
 
 
@@ -172,6 +172,8 @@ Smoother smoother = new Smoother();
 
 void setup() {
   setupWinches();
+  
+  frameRate(30); // reduce frame rate to slow down /go messages
   
   size(800,600);
   cp5 = new ControlP5(this);
@@ -204,6 +206,7 @@ void setup() {
   
   OscMessage myMessage;
   
+
 /*
   // tell motors to send /status directly to me instead of broadcast
   myMessage = new OscMessage("/serveraddress");
