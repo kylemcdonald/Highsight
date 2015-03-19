@@ -214,6 +214,8 @@ void loop(){
   // freerun test to exercise the motor
   else if (state==FREERUNTEST) {
     pidSetpoint = freeruncenter + freerunwidth * sin(millis() / 6000.0);
+    myPID.Compute();
+    goalSpeed = pidOutput;
   }
   
 
