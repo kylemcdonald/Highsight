@@ -144,8 +144,9 @@ Winchbot winches[] = new Winchbot[NUM_MOTORS];
 //    -- rough measurement 2000 steps = 4.25 inches or 470
 //    more careful measurements: about 450-459 
 
-float stepsPerInch = 454; 
-float stepsPerCM = 179;
+// new encoder algorithm has 1000 steps per spin instead of 4000, so divide by 4:
+float stepsPerInch = 454 / 4.0; 
+float stepsPerCM = 179 / 4.0;
 
 void setupWinches() {
   //NW                 motorID  pos in room             steps to rope length     support point 
