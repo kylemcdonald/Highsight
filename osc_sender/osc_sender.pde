@@ -7,6 +7,9 @@ ControlP5 cp5;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 
+int[] myLocalAddress = {192,168,2,1};
+
+
 String state = "ok";
 
 float STARTX = 0, STARTY = 0, STARTZ = 20;
@@ -197,23 +200,29 @@ void setup() {
   //myRemoteLocation = new NetAddress("192.168.2.42",12001); // direct to motor0
   
   
-  //for (int m=0; m<NUM_MOTORS; m++) {
-    OscMessage myMessage = new OscMessage("/maxspeed");
-    //myMessage.add(m); // motor 0
-    myMessage.add(STARTUP_MAX_SPEED);  // speed must be float!
-    oscP5.send(myMessage, myRemoteLocation);
-    
-    myMessage = new OscMessage("/maxaccel");
-    //myMessage.add(m); // motor 0
-    myMessage.add(MAX_ACCEL);  // speed must be float!
-    oscP5.send(myMessage, myRemoteLocation);
-    
-    myMessage = new OscMessage("/deadzone");
-    myMessage.add(15);
-    myMessage.add(4);
-    oscP5.send(myMessage, myRemoteLocation);
-    
-  //}
+
+  // tell motors to send /status directly to me instead of broadcast
+  OscMessage myMessage = new OscMessage("/serveraddress");
+  for (int i=0; i<4; i++) {
+    myMessage.add(myLocalAddress[i]);
+  }
+  oscP5.send(myMessage, myRemoteLocation);
+  
+  // set movement parameters
+  myMessage = new OscMessage("/maxspeed");
+  myMessage.add(STARTUP_MAX_SPEED);  // speed must be float!
+  oscP5.send(myMessage, myRemoteLocation);
+  
+  myMessage = new OscMessage("/maxaccel");
+  myMessage.add(MAX_ACCEL);  // speed must be float!
+  oscP5.send(myMessage, myRemoteLocation);
+  
+  myMessage = new OscMessage("/deadzone");
+  myMessage.add(15);
+  myMessage.add(4);
+  oscP5.send(myMessage, myRemoteLocation);
+  
+  
 }
 
 
