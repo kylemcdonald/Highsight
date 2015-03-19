@@ -211,7 +211,7 @@ void setup() {
   
   // slow down status reports
   myMessage = new OscMessage("/statusinterval");
-  myMessage.add(500);
+  myMessage.add(100);
   oscP5.send(myMessage, myRemoteLocation);
   
   // set movement parameters
@@ -228,7 +228,16 @@ void setup() {
   myMessage.add(4);
   oscP5.send(myMessage, myRemoteLocation);
   
-  
+}
+
+void freeruntest(int motorID) {
+  // freerun test
+  OscMessage myMessage = new OscMessage("/freeruntest");
+  myMessage.add(motorID);
+  myMessage.add(2000.0);
+  myMessage.add(200.0);
+  oscP5.send(myMessage, myRemoteLocation);
+   
 }
 
 
@@ -346,6 +355,9 @@ void keyPressed() {
       
     case 'k': z -= 3;
       break;
+      
+    //case 'f': freeruntest(0);
+    //  break;
       
     default:
       return; // don't call mouseDragged

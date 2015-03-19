@@ -124,6 +124,10 @@ int MSEC_PER_STATUS = 50; // millseconds between sending status messages
 Watchdog::CApplicationMonitor ApplicationMonitor;
 
 
+// FREERUN TESTING --------
+bool freeruntest = false;
+float freeruncenter = 0;
+float freerunwidth = 0;
 
 
 // SYSTEM STATE
@@ -135,6 +139,7 @@ enum stateEnum {
   OK,               // all is well, ready for motion commands
   STOPPED,          // stopped by /stop command
   ENDSTOP,          // unexpectedly hit the end stop, need to home again
+  FREERUNTEST,      // exercising the motor
   MOTOROFF         // motor power off by /disable command
 } state = MOTOROFF;
 
@@ -205,6 +210,12 @@ void loop(){
       homed = true;
     }
   }
+  
+  // freerun test to exercise the motor
+  else if (state==FREERUNTEST) {
+    pidSetpoint = freeruncenter + freerunwidth * sin(millis() / 6000.0);
+  }
+  
 
   // check end stop
   int endstop = digitalRead(EXTENSIONENDSTOPPIN);
@@ -443,6 +454,10 @@ void sendOscStatus(long stepper, long encoder) {
         msg.add("NOTHOMED-OFF");
       break;
       
+    case FREERUNTEST:
+      msg.add("FREERUNTEST");
+      break;
+      
     default:  
        msg.add("UNKNOWN");
        break;
@@ -471,6 +486,8 @@ void oscEvent(OscMessage &m) {
   m.plug("/serveraddress", oscSetServerAddress);
   
   m.plug("/motor", oscSetMotorPower);
+  
+  m.plug("/freeruntest", oscFreeRun);
   
   m.plug("/crashtest", oscCrash);
 }
@@ -553,7 +570,7 @@ void oscSetServerAddress(OscMessage &m) {
 // STOP: 
 void oscStop(OscMessage &m) {
   if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
-    if (state==OK) state = STOPPED;
+    if (state==OK || state==FREERUNTEST) state = STOPPED;
     else if (state==HOMING || state==HOMINGBACKOFF) state = NOTHOMED;
   }
   goalSpeed = 0;
@@ -562,7 +579,7 @@ void oscStop(OscMessage &m) {
 // RESUME: 
 void oscResume(OscMessage &m) {
   if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
-    if (state==STOPPED) state = OK; 
+    if (state==STOPPED || state==FREERUNTEST) state = OK; 
   }
 }
 
@@ -584,6 +601,18 @@ void oscSetMotorPower(OscMessage &m) {
     }
   }
 }
+
+
+// FREERUN TEST (one motor at a time only!)
+void oscFreeRun(OscMessage &m) {
+  if (homed && m.getInt(0) == MOTOR_ID) {
+    state = FREERUNTEST;
+    freeruncenter = m.getFloat(1);
+    freerunwidth = m.getFloat(2);
+  }
+}
+
+
 
 // WATCHDOG TEST
 void oscCrash(OscMessage &m) {
