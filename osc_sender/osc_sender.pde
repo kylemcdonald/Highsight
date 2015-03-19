@@ -209,6 +209,11 @@ void setup() {
   }
   oscP5.send(myMessage, myRemoteLocation);
   
+  // slow down status reports
+  myMessage = new OscMessage("/statusinterval");
+  myMessage.add(500);
+  oscP5.send(myMessage, myRemoteLocation);
+  
   // set movement parameters
   myMessage = new OscMessage("/maxspeed");
   myMessage.add(STARTUP_MAX_SPEED);  // speed must be float!

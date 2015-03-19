@@ -533,7 +533,7 @@ void oscSetDeadZone(OscMessage &m) {
 void oscSetStatusInterval(OscMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     int msec = m.getInt(m.size()-1);
-    if (msec<3 || msec>200) return;
+    if (msec<3 || msec>500) return;
     MSEC_PER_STATUS = msec;
   }
 }
