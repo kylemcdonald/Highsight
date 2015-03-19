@@ -150,18 +150,19 @@ float stepsPerCM = 179 / 4.0;
 
 void setupWinches() {
   //NW                 motorID  pos in room             steps to rope length     support point 
-  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 56833, 505,     -10, 10, 0); // cm
+  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 13267, 523,     -7.6, 7.6, 0); // cm
   //NE
-  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 55058, 503,      10, 10, 0);
+  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 13163, 518,      7.6, 7.6, 0);
   //SE
-  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 54695, 512,      10, -10, 0);
+  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 13208, 521,      7.6, -7.6, 0);
   //SW
-  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 45187, 514,     -10, -10, 0);
+  winches[3] = new Winchbot(2,   -304.5, 303.5, 357,  stepsPerCM, 13226, 521,     -7.6, -7.6, 0);
 }
 
 
 Textlabel poslabels[] = new Textlabel[NUM_MOTORS];
 Textlabel statelabels[] = new Textlabel[NUM_MOTORS];
+Textlabel lostPacketLabels[] = new Textlabel[NUM_MOTORS];
 
 Textlabel xlabel;// = new Textlabel();
 Textlabel ylabel;// = new Textlabel();
@@ -188,6 +189,7 @@ void setup() {
     cp5.addButton("HOME"+i).setPosition(40+90*i, 10);
     poslabels[i] = cp5.addTextlabel("pos"+i).setPosition(60+90*i, 50);
     statelabels[i] = cp5.addTextlabel("state"+i).setPosition(60+90*i, 35);
+    lostPacketLabels[i] = cp5.addTextlabel("lost"+i).setPosition(60+90*i, 65);
   }
   
   xlabel = cp5.addTextlabel("xpos"+1).setPosition(10,500);
@@ -200,14 +202,16 @@ void setup() {
   myRemoteLocation = new NetAddress("192.168.2.255",12001); // broadcast address from ifconfig bridge100 listing
   //myRemoteLocation = new NetAddress("192.168.2.42",12001); // direct to motor0
   
+  OscMessage myMessage;
   
-
+/*
   // tell motors to send /status directly to me instead of broadcast
-  OscMessage myMessage = new OscMessage("/serveraddress");
+  myMessage = new OscMessage("/serveraddress");
   for (int i=0; i<4; i++) {
     myMessage.add(myLocalAddress[i]);
   }
   oscP5.send(myMessage, myRemoteLocation);
+  */
   
   // slow down status reports
   myMessage = new OscMessage("/statusinterval");
@@ -466,6 +470,13 @@ void oscEvent(OscMessage theOscMessage) {
       if (skipped != 1) {
         println("MOTOR " + motor + " serial skipped " + skipped);
       }
+      
+    }
+    
+    
+    if (theOscMessage.arguments().length >= 8) {
+      int lostPackets = theOscMessage.get(8).intValue();
+      lostPacketLabels[motor].setText("lost "+lostPackets); 
     }
 
     /*
