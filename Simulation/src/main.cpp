@@ -26,6 +26,8 @@ const float frameRate = 60;
 const float eyeHeightMin = eyePadding, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
+int lastReceivedMessageNumber[] = {0,0,0,0};
+
 enum LiveMode {
     LIVE_MODE_XY,
     LIVE_MODE_XZ
@@ -45,7 +47,7 @@ void drawLineHighlight(ofVec3f start, ofVec3f end) {
 class Motor {
 public:
     int id = 0;
-    float unitsPerCm = 179;
+    float unitsPerCm = 179/4.0;
     float refPointCm = 0;
     float refPointUnits = 0;
     

@@ -10,34 +10,34 @@
         </osc>
         <nw>
             <id>3</id>
-            <unitsPerCm>44.75</unitsPerCm>
+            <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>505</cm>
-                <units>56833</units>
+                <cm>523</cm>
+                <units>13267</units>
             </refPoint>
         </nw>
         <ne>
             <id>0</id>
-            <unitsPerCm>44.75</unitsPerCm>
+            <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>503</cm>
-                <units>55058</units>
+                <cm>518</cm>
+                <units>13163</units>
             </refPoint>
         </ne>
         <se>
             <id>1</id>
-            <unitsPerCm>44.75</unitsPerCm>
+            <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>512</cm>
-                <units>54695</units>
+                <cm>521</cm>
+                <units>13208</units>
             </refPoint>
         </se>
         <sw>
             <id>2</id>
-            <unitsPerCm>44.75</unitsPerCm>
+            <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>514</cm>
-                <units>45187</units>
+                <cm>521</cm>
+                <units>13226</units>
             </refPoint>
         </sw>
     </motors>
