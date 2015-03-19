@@ -52,7 +52,7 @@ int MOVING_DEAD_ZONE = 2; // when moving, smaller dead zone (so slow movements a
 
 // ENCODER SETUP ---------------------------
 // encoder on 2 and 3   // +5 is brown, ground is blue
-#define ENCODER_PORT PORTD
+#define ENCODER_PORT PIND
 const int encoder0PinA = 2;  // white   PORTD BIT 2
 const byte encoder0PinAMask = 0x04;
 const int encoder0PinB = 3;  // black   PORTD BIT 3
@@ -89,7 +89,7 @@ double goalSpeed = 0;
 float homingSpeed = 3.0;
 bool homed = false;
 
-const int BACKOFF_STEPS = 600; // how many encoder steps to reverse out of endstop (so Zero is this far from the switch)
+const int BACKOFF_STEPS = 200; // how many encoder steps to reverse out of endstop (so Zero is this far from the switch)
 
 
 // MOTOR TIMING/POS
@@ -398,10 +398,10 @@ void doEncoderA() {
     then you're going anti-clockwise.
   */
   if (ENCODER_PORT & encoder0PinBMask) {
-    encoder0Pos ++;
+    encoder0Pos --;
   }
   else {
-    encoder0Pos --;
+    encoder0Pos ++;
   }
 }
 
