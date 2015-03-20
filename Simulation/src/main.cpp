@@ -489,6 +489,9 @@ public:
         if(key == 'f') {
             toggleFullscreen();
         }
+        if(key == 'm') {
+            motorsPower = false;
+        }
     }
     void keyReleased(int key) {
         if(key == ' ' || key == '\t') {
