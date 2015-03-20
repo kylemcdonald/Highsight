@@ -59,15 +59,10 @@ public:
     ofxConnexion connexion;
     
     ofxPanel gui;
-    ofParameter<bool> everythingOk;
-    ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn;
-    ofParameter<ofVec3f> eyePosition;
-    ofParameter<ofVec3f> connexionPosition, connexionRotation;
-    ofParameter<bool> lockLookAngle;
-    ofParameter<float> lookAngleOffset;
-    ofParameter<bool> visitorMode;
-    ofParameter<float> moveSpeedCps;
-    ofxButton visitorModeButton;
+    ofParameter<bool> everythingOk, lockLookAngle, visitorMode, motorsStart, motorsPower;
+    ofParameter<float> lookAngleOffset, moveSpeedCps;
+    ofParameter<ofVec3f> eyePosition, connexionPosition, connexionRotation;
+    ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn, visitorModeBtn;
     
     void setup() {
         ofSetFrameRate(60);
@@ -120,6 +115,10 @@ public:
         toggleFullscreenBtn.addListener(this, &ofApp::toggleFullscreen);
         gui.add(resetBtn.setup("Reset everything"));
         resetBtn.addListener(this, &ofApp::reset);
+        gui.add(motorsStart.set("Motors start", false));
+        motorsStart.addListener(this, &ofApp::setMotorsStart);
+        gui.add(motorsPower.set("Motors power", false));
+        motorsPower.addListener(this, &ofApp::setMotorsPower);
         gui.add(resetLookAngleBtn.setup("Reset look angle"));
         resetLookAngleBtn.addListener(this, &ofApp::resetLookAngle);
         gui.add(lockLookAngle.set("Lock look angle", false));
@@ -139,8 +138,8 @@ public:
                                 ofVec3f(-eyeWidthMax, -eyeDepthMax, eyeHeightMin),
                                 ofVec3f(+eyeWidthMax, +eyeDepthMax, eyeHeightMax)));
 
-        sendMotorPower(true);
-        sendMotorsAllCommand("/resume");
+        motorsPower = true;
+        motorsStart = true;
         reset();
     }
     void reset() {
@@ -176,7 +175,10 @@ public:
         msg.setAddress(address);
         oscMotorsSend.sendMessage(msg, false);
     }
-    void sendMotorPower(bool power) {
+    void setMotorsStart(bool& start) {
+        sendMotorsAllCommand(start ? "/resume" : "/stop");
+    }
+    void setMotorsPower(bool& power) {
         int powerInt = power ? 1 : 0;
         ofLog() << "/motor " << powerInt;
         ofxOscMessage msg;
@@ -198,8 +200,8 @@ public:
         sendMotorsEachCommand("/maxspeed", moveSpeedCps);
     }
     void exit() {
-        sendMotorsAllCommand("/stop");
-        sendMotorPower(false);
+        motorsStart = false;
+        motorsPower = false;
         connexion.stop();
     }
     void update() {
