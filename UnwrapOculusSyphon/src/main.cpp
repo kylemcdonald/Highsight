@@ -41,7 +41,7 @@ public:
         oculusRift.baseCamera = &camera;
         oculusRift.setup();
 	}
-    void saveScreen(string prefix = "") {
+    void saveScreen(string prefix) {
         ofPixels pix;
         cam.getTexture().readToPixels(pix);
         ofSaveImage(pix, prefix + ofGetTimestampString() + "-camera.tiff");
@@ -56,12 +56,12 @@ public:
                 targetLookAngle = msg.getArgAsFloat(0);
             }
             if(msg.getAddress() == "/save") {
-                saveScreen("save-");
+                saveScreen("button/");
             }
         }
         lookAngle = ofLerp(lookAngle, targetLookAngle, .1);
         if(screenshotTimer.tick()) {
-            saveScreen();
+            saveScreen("automatic/");
         }
 	}
     void draw() {
