@@ -1,5 +1,4 @@
 // todo:
-// fix startup speed situation
 // show homed states
 // and handle emergency stop
 // add homing button
@@ -156,7 +155,7 @@ public:
         // processed right push+tilt: +x pos, +y rot
         // processed forward push+tilt: +y pos, +x rot
         connexionPosition = ofVec3f(+np.x, -np.y, -np.z);
-        connexionRotation = ofVec3f(-np.x, -np.y, -np.z);
+        connexionRotation = ofVec3f(-nr.x, -nr.y, -nr.z);
     }
     void sendMotorsAllCommand(string address) {
         ofxOscMessage msg;
