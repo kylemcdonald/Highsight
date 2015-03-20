@@ -49,6 +49,7 @@ public:
     ofxOscSender oscMotorsSend, oscOculusSend;
     ofxOscReceiver oscMotorsReceive;
     Motor nw, ne, sw, se;
+    vector<Motor*> motorsSorted;
     ofEasyCam cam;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
@@ -85,6 +86,11 @@ public:
         ne.setup(config, "motors/ne/");
         se.setup(config, "motors/se/");
         sw.setup(config, "motors/sw/");
+        motorsSorted.resize(4);
+        motorsSorted[nw.id] = &nw;
+        motorsSorted[ne.id] = &ne;
+        motorsSorted[se.id] = &se;
+        motorsSorted[sw.id] = &sw;
         
         oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
         oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
@@ -158,18 +164,22 @@ public:
         connexionRotation = ofVec3f(-nrot.x, -nrot.y, -nrot.z);
     }
     void sendMotorsAllCommand(string address) {
+        ofLog() << address;
         ofxOscMessage msg;
         msg.setAddress(address);
         oscMotorsSend.sendMessage(msg, false);
     }
     void sendMotorPower(bool power) {
         moveSpeedCps = 0;
+        int powerInt = power ? 1 : 0;
+        ofLog() << "/motor " << powerInt;
         ofxOscMessage msg;
         msg.setAddress("/motor");
-        msg.addIntArg(power ? 1 : 0);
+        msg.addIntArg(powerInt);
         oscMotorsSend.sendMessage(msg, false);
     }
     void sendMotorsEachCommand(string address, float value) {
+        ofLog() << address << " " << value;
         for(int i = 0; i < 4; i++) {
             ofxOscMessage msg;
             msg.setAddress(address);
@@ -179,7 +189,6 @@ public:
         }
     }
     void moveSpeedChange(float& value) {
-        ofLog() << "maxspeed " << value;
         sendMotorsEachCommand("/maxspeed", moveSpeedCps);
     }
     void exit() {
@@ -196,8 +205,19 @@ public:
         updateOculus();
     }
     void updateStatus() {
-        // while osc messages are available
-        // set all values to corresponding motors
+        while(oscMotorsReceive.hasWaitingMessages()) {
+            ofxOscMessage msg;
+            oscMotorsReceive.getNextMessage(&msg);
+            if(msg.getAddress() == "/status") {
+                int motorId = msg.getArgAsInt32(0);
+                Motor::Status& status = motorsSorted[motorId]->status;
+                status.statusMessage = msg.getArgAsString(1);
+                status.encoder0Pos = msg.getArgAsFloat(2);
+                status.currentSpeed = msg.getArgAsFloat(3);
+                status.stepper = msg.getArgAsInt32(4);
+                status.encoder = msg.getArgAsInt32(5);
+            }
+        }
     }
     void updateConnexion() {
         moveVecCps = ofVec3f(connexionRotation->y,
@@ -267,15 +287,9 @@ public:
         
         ofxOscMessage motors;
         motors.setAddress("/go");
-        float sorted[] = {0, 0, 0, 0};
-        sorted[nw.id] = MAX(0, nw.getLengthUnits());
-        sorted[ne.id] = MAX(0, ne.getLengthUnits());
-        sorted[se.id] = MAX(0, se.getLengthUnits());
-        sorted[sw.id] = MAX(0, sw.getLengthUnits());
-        motors.addFloatArg(sorted[0]);
-        motors.addFloatArg(sorted[1]);
-        motors.addFloatArg(sorted[2]);
-        motors.addFloatArg(sorted[3]);
+        for(int i = 0; i < 4; i++) {
+            motors.addFloatArg(MAX(0, motorsSorted[i]->getLengthUnits()));
+        }
         oscMotorsSend.sendMessage(motors, false);
     }
     void updateOculus() {
