@@ -1,6 +1,7 @@
 // todo:
-// and handle emergency stop
-// add homing button
+// clean up variables / config
+// add homing function
+// quadlaterate on startupalso,
 // load all config via json/xml
 // add screenshot trigger
 // move osc output to threaded loop (not graphics loop)
@@ -155,6 +156,11 @@ public:
         ofToggleFullscreen();
     }
     void connexionData(ConnexionData& data) {
+        if(data.getButton(0) || data.getButton(1)) {
+            ofxOscMessage msg;
+            msg.setAddress("/save");
+            oscOculusSend.sendMessage(msg);
+        }
         // raw right push+tilt: +x pos, -y rot
         // raw forward push+tilt: -y pos, -x rot
         ofVec3f npos = data.getNormalizedPosition();

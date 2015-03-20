@@ -12,6 +12,7 @@ public:
     ofxSyphonClient cam;
     Fisheye fisheye;
 	RateTimer cameraTimer, renderTimer;
+    DelayTimer screenshotTimer;
     ofCamera camera;
     ofxOculusDK2 oculusRift;
     ofxOscReceiver osc;
@@ -31,6 +32,8 @@ public:
         cam.set("","Black Syphon");
         fisheye.setup();
         
+        screenshotTimer.setPeriod(60);
+        
         ofXml config;
         config.load("config.xml");
         osc.setup(config.getIntValue("osc/port"));
@@ -38,6 +41,12 @@ public:
         oculusRift.baseCamera = &camera;
         oculusRift.setup();
 	}
+    void saveScreen(string prefix = "") {
+        ofPixels pix;
+        cam.getTexture().readToPixels(pix);
+        ofSaveImage(pix, prefix + ofGetTimestampString() + "-camera.tiff");
+        ofSaveScreen(prefix + ofGetTimestampString() + "-oculus.tiff");
+    }
     void update() {
         renderTimer.tick();
         while(osc.hasWaitingMessages()) {
@@ -46,8 +55,14 @@ public:
             if(msg.getAddress() == "/lookAngle") {
                 targetLookAngle = msg.getArgAsFloat(0);
             }
+            if(msg.getAddress() == "/save") {
+                saveScreen("save-");
+            }
         }
         lookAngle = ofLerp(lookAngle, targetLookAngle, .1);
+        if(screenshotTimer.tick()) {
+            saveScreen();
+        }
 	}
     void draw() {
         ofEnableDepthTest();
