@@ -4,27 +4,28 @@
 // load config via json/xml
 
 #include "ofMain.h"
+
 #include "ofxAssimpModelLoader.h"
 #include "ofxOsc.h"
 #include "ofxConnexion.h"
 #include "ofxGui.h"
+
+#include "Motor.h"
 
 const float width = 607, depth = 608, height = 357;
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
 const float eyeStartHeight = 100;
 //const float eyeWidth = 1.25, eyeDepth = 1.25, attachHeight = 0;
 const float eyeWidth = 7.6, eyeDepth = 7.6, attachHeight = 0;
-const float eyePadding = 0;
 const float minMouseDistance = 20;
 const float maxMouseDistance = 250;
 const float lookAngleSpeedDps = 90; // degrees / second
-const float frameRate = 60;
 
 const float lookAngleDefault = 180; // startup angle
 const float oculusLookAngleOffset = 180; // correct for angle between kiosk and carriage
 
-const float safetyFloor = 80; // never go lower than this!
-const float eyeHeightMin = eyePadding + safetyFloor, eyeHeightMax = height - eyePadding;
+const float eyePadding = 40;
+const float eyeHeightMin = 80, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
 //  safe zone when controlled by visitor - a stubby cylinder
@@ -35,56 +36,6 @@ const float visitorRadius = 230; // cm
 enum LiveMode {
     LIVE_MODE_XY,
     LIVE_MODE_XZ
-};
-
-void drawLineHighlight(ofVec3f start, ofVec3f end) {
-    ofPushStyle();
-    ofSetLineWidth(4);
-    ofSetColor(255);
-    ofDrawLine(start, end);
-    ofSetLineWidth(2);
-    ofSetColor(0);
-    ofDrawLine(start, end);
-    ofPopStyle();
-}
-
-class Motor {
-public:
-    int id = 0;
-    float unitsPerCm = 0;
-    float refPointCm = 0;
-    float refPointUnits = 0;
-    
-    ofVec3f eyeAttach, pillarAttach;
-    float prevLength, lengthSpeedCps;
-    Motor() : prevLength(0), lengthSpeedCps(0) {
-    }
-    void setup(ofXml& xml, string address = "") {
-        id = xml.getIntValue(address + "id");
-        unitsPerCm = xml.getFloatValue(address + "unitsPerCm");
-        refPointCm = xml.getFloatValue(address + "refPoint/cm");
-        refPointUnits = xml.getFloatValue(address + "refPoint/units");
-    }
-    void update(ofVec3f eyePosition) {
-        ofVec3f start = eyePosition + eyeAttach;
-        float curLength = (pillarAttach - start).length();
-        if(prevLength > 0) {
-            lengthSpeedCps = (curLength - prevLength) * frameRate;
-        }
-        prevLength = curLength;
-    }
-    void draw(ofVec3f eyePosition) {
-        ofVec3f start = eyePosition + eyeAttach;
-        drawLineHighlight(start, pillarAttach);
-        ofVec3f label = start.getInterpolated(pillarAttach, .5);
-        float curLength = (pillarAttach - start).length();
-        ofSetColor(0);
-        ofDrawBitmapString(ofToString(roundf(curLength)) + "cm @ " +
-                           ofToString(roundf(lengthSpeedCps)) + "cm/s", label);
-    }
-    float getLengthUnits() {
-        return (refPointCm - prevLength) * unitsPerCm + refPointUnits;
-    }
 };
 
 class ofApp : public ofBaseApp {
@@ -111,9 +62,8 @@ public:
     ofParameter<bool> visitorMode = true;
     
     void setup() {
-        ofBackground(0);
-        ofDisableArbTex();
-        ofSetFrameRate(frameRate);
+        ofSetFrameRate(60);
+        ofBackground(128);
         
         ofXml config;
         config.load("config.xml");
@@ -174,7 +124,7 @@ public:
         sendMotorsEachCommand("/maxspeed", moveSpeedCps);
     }
     void resetLookAngle() {
-        lookAngle = 0;
+        lookAngle = lookAngleDefault;
     }
     void toggleFullscreen() {
         ofToggleFullscreen();
@@ -227,7 +177,6 @@ public:
                 eyePosition = ofVec3f(eyePosition->x * visitorRadius / radial,
                                       eyePosition->y * visitorRadius / radial,
                                       eyePosition->z);
-                
             }
         }
         
@@ -265,12 +214,12 @@ public:
                              -connexionPosition->z);
         moveVecCps.rotate(lookAngle, ofVec3f(0, 0, 1));
         moveVecCps *= moveSpeedCps;
-        ofVec3f moveVecFps = moveVecCps / frameRate;
+        ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
         eyePosition += moveVecFps;
         
         if(!lockLookAngle) {
             float lookAngleDps = -connexionRotation->z * lookAngleSpeedDps;
-            float lookAngleFps = lookAngleDps / frameRate;
+            float lookAngleFps = lookAngleDps / ofGetTargetFrameRate();
             lookAngle += lookAngleFps;
         }
     }
@@ -286,7 +235,7 @@ public:
             moveVecCps.y *= -1;
             moveVecCps *= ofNormalize(mouseLength, minMouseDistance, maxMouseDistance);
             moveVecCps *= moveSpeedCps;
-            ofVec3f moveVecFps = moveVecCps / frameRate;
+            ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
             ofVec3f eyeUpdate = eyePosition;
             if(liveMode == LIVE_MODE_XY) {
                 eyeUpdate.x += moveVecFps.x;
@@ -301,17 +250,12 @@ public:
     void draw() {
         cam.begin();
         ofPushMatrix();
-        ofEnableDepthTest();
         
         // setup the space for viewing
         ofRotateX(-80);
         ofRotateZ(-20);
         ofScale(1.7, 1.7, 1.7);
         ofTranslate(0, 0, -height / 3);
-        
-        // draw the room
-        
-        ofDisableDepthTest();
         
         ofPushMatrix();
         ofPushStyle();
@@ -326,10 +270,13 @@ public:
         
         ofPushMatrix();
         ofTranslate(eyePosition);
-        // draw the carriage
-        ofSetColor(ofColor::black);
+        ofDrawBox(0, 0, 0, eyeWidth, eyeDepth, attachHeight);
+        ofSetColor(ofColor::white);
         ofRotate(lookAngle);
         ofDrawLine(0, 0, 0, 90);
+        ofRotateY(45);
+        ofDrawTriangle(5, 90, 0, 100, -5, 90);
+        ofRotateY(90);
         ofDrawTriangle(5, 90, 0, 100, -5, 90);
         ofPopMatrix();
         
@@ -338,7 +285,31 @@ public:
         ne.draw(eyePosition);
         sw.draw(eyePosition);
         se.draw(eyePosition);
+        ofPolyline floor;
+        floor.close();
+        floor.addVertex(nw.getFloorDrop());
+        floor.addVertex(ne.getFloorDrop());
+        floor.addVertex(se.getFloorDrop());
+        floor.addVertex(sw.getFloorDrop());
+        floor.draw();
         ofPopStyle();
+        
+        ofPushMatrix();
+        ofPushStyle();
+        ofNoFill();
+        ofSetColor(255, 32);
+        int n = 12;
+        for(int i = 0; i < n; i++) {
+            if(visitorMode) {
+                float z = ofMap(i, 0, n - 1, visitorFloor, visitorCeiling);
+                ofDrawCircle(0, 0, z, visitorRadius);
+            } else {
+                float z = ofMap(i, 0, n - 1, eyeHeightMin, eyeHeightMax);
+                ofDrawRectangle(-eyeWidthMax, -eyeDepthMax, z, eyeWidthMax*2, eyeDepthMax*2);
+            }
+        }
+        ofPopStyle();
+        ofPopMatrix();
         
         ofPopMatrix();
         cam.end();
@@ -387,13 +358,13 @@ public:
         ofHideCursor();
         ofPushStyle();
         ofTranslate(ofGetMouseX()+.5, ofGetMouseY()+.5);
-        ofSetColor(ofColor::black, 64);
+        ofSetColor(ofColor::white, 64);
         ofDrawCircle(0, 0, 12);
-        ofSetColor(ofColor::white, 128);
+        ofSetColor(ofColor::black, 128);
         ofDrawCircle(0, 0, 6);
-        ofSetColor(ofColor::black, 255);
-        ofDrawCircle(0, 0, 1.5);
         ofSetColor(ofColor::white, 255);
+        ofDrawCircle(0, 0, 1.5);
+        ofSetColor(ofColor::black, 255);
         ofDrawCircle(0, 0, .5);
         ofPopMatrix();
         ofPopStyle();

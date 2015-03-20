@@ -88,6 +88,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2759AAC81ABC436200DC691C /* Motor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Motor.h; sourceTree = "<group>"; };
 		276FDFF01AAF9D5F00FD3F2A /* ofxConnexion.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxConnexion.cpp; sourceTree = "<group>"; };
 		276FDFF11AAF9D5F00FD3F2A /* ofxConnexion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxConnexion.h; sourceTree = "<group>"; };
 		276FDFF31AAF9D9100FD3F2A /* 3DconnexionClient.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = 3DconnexionClient.framework; path = ../../../../../../../Library/Frameworks/3DconnexionClient.framework; sourceTree = "<group>"; };
@@ -583,6 +584,7 @@
 			children = (
 				279144051AB9EE4000346B8B /* config.xml */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
+				2759AAC81ABC436200DC691C /* Motor.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
