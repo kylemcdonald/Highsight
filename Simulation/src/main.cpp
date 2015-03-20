@@ -9,10 +9,7 @@
 #include "ofxConnexion.h"
 #include "ofxGui.h"
 
-#define inchesToCm(x) (x * 2.54f)
-
 const float width = 607, depth = 608, height = 357;
-//const float width = inchesToCm(74.5), depth = inchesToCm(111.5), height = inchesToCm(69);
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
 const float eyeStartHeight = 100;
 //const float eyeWidth = 1.25, eyeDepth = 1.25, attachHeight = 0;
@@ -103,7 +100,6 @@ public:
     ofImage shadow;
     int liveMode;
     bool live = false;
-    ofParameter<bool> slackRope = false;
     ofParameter<bool> lockLookAngle = true;
     ofxConnexion connexion;
     ofxPanel gui;
@@ -172,7 +168,6 @@ public:
         ofAddListener(connexion.connexionEvent, this, &ofApp::connexionData);
         
         gui.setup();
-        gui.add(slackRope.set("Slack rope", false));
         gui.add(connexionPosition.set("Connexion Position",
                                       ofVec3f(),
                                       ofVec3f(-1, -1, -1),
@@ -265,14 +260,6 @@ public:
         ofxOscMessage motors;
         motors.setAddress("/go");
         float sorted[] = {0, 0, 0, 0};
-        // todo: detect dead zones (where rope is less than 0)
-        slackRope = false;
-        if(nw.getLengthUnits() < 0 ||
-           ne.getLengthUnits() < 0 ||
-           se.getLengthUnits() < 0 ||
-           sw.getLengthUnits() < 0) {
-            slackRope = true;
-        }
         sorted[nw.id] = MAX(0, nw.getLengthUnits());
         sorted[ne.id] = MAX(0, ne.getLengthUnits());
         sorted[se.id] = MAX(0, se.getLengthUnits());
