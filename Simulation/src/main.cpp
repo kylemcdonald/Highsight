@@ -137,10 +137,16 @@ public:
                                 ofVec3f(0, 0, eyeStartHeight),
                                 ofVec3f(-eyeWidthMax, -eyeDepthMax, eyeHeightMin),
                                 ofVec3f(+eyeWidthMax, +eyeDepthMax, eyeHeightMax)));
-
-        motorsPower = true;
-        motorsStart = true;
+        setupMovement();
         reset();
+    }
+    void setupMovement() {
+        if(!motorsPower) {
+            motorsPower = true;
+        }
+        if(!motorsStart) {
+            motorsStart = true;
+        }
     }
     void reset() {
         lastResetTime = ofGetElapsedTimeMillis();
@@ -168,6 +174,7 @@ public:
         // processed forward push+tilt: +y pos, +x rot
         connexionPosition = ofVec3f(+npos.x, -npos.y, -npos.z);
         connexionRotation = ofVec3f(-nrot.x, -nrot.y, -nrot.z);
+        setupMovement();
     }
     void sendMotorsAllCommand(string address) {
         ofLog() << address;
