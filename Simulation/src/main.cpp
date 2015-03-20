@@ -1,7 +1,7 @@
 // todo:
 // clean up variables / config
 // add homing function
-// quadlaterate on startupalso,
+// quadlaterate on startup
 // load all config via json/xml
 // add screenshot trigger
 // move osc output to threaded loop (not graphics loop)
@@ -172,17 +172,13 @@ public:
         ofVec3f nrot = data.getNormalizedRotation();
         // processed right push+tilt: +x pos, +y rot
         // processed forward push+tilt: +y pos, +x rot
+        connexionPosition = ofVec3f(+npos.x, -npos.y, -npos.z);
+        connexionRotation = ofVec3f(-nrot.x, -nrot.y, -nrot.z);
         
-        if (abs(npos.x) > 0.05 || abs(npos.y) > 0.05 || abs(npos.z) > 0.05
-            || abs(nrot.x) > 0.05 || abs(nrot.y) > 0.05 || abs(nrot.z) > 0.05) {
-            
-            connexionPosition = ofVec3f(+npos.x, -npos.y, -npos.z);
-            connexionRotation = ofVec3f(-nrot.x, -nrot.y, -nrot.z);
+        float movementThreshold = 0.05;
+        if (npos.length() > movementThreshold ||
+            nrot.length() > movementThreshold) {
             setupMovement();
-        }
-        else {
-            connexionPosition = ofVec3f(0, 0, 0);
-            connexionRotation = ofVec3f(0, 0, 0);
         }
     }
     void sendMotorsAllCommand(string address) {
