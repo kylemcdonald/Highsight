@@ -42,9 +42,9 @@ public:
         oculusRift.setup();
 	}
     void saveScreen(string prefix) {
-        ofPixels pix;
-        cam.getTexture().readToPixels(pix);
-        ofSaveImage(pix, prefix + ofGetTimestampString() + "-camera.tiff");
+//        ofPixels pix;
+//        cam.getTexture().readToPixels(pix);
+//        ofSaveImage(pix, prefix + ofGetTimestampString() + "-camera.tiff");
         ofSaveScreen(prefix + ofGetTimestampString() + "-oculus.tiff");
     }
     void update() {
