@@ -49,10 +49,10 @@ public:
         float curPositionUnits = status.encoder0Pos;
         float curPositionCm = unitsToCm(curPositionUnits);
         ofTranslate(pillarAttach);
-        ofDrawBitmapString("target\n  position: " + ofToString(roundf(targetLengthCm)) + "cm / " + ofToString(roundf(targetLengthUnits)) + " units\n" +
-                           "  speed: " + ofToString(roundf(lengthSpeedCps)) + "cm/s\n" +
+        ofDrawBitmapString("target\n  position: ~" + ofToString(roundf(targetLengthCm)) + "cm / ~" + ofToString(roundf(targetLengthUnits)) + " units\n" +
+                           "  speed: ~" + ofToString(roundf(lengthSpeedCps)) + "cm/s\n" +
                            "current\n  status: " + status.statusMessage + "\n" +
-                           "  position: " + ofToString(roundf(curPositionCm)) + " cm / " + ofToString(roundf(curPositionUnits)) + " units\n" +
+                           "  position: ~" + ofToString(roundf(curPositionCm)) + " cm / ~" + ofToString(roundf(curPositionUnits)) + " units\n" +
                            "  speed: " + ofToString(status.currentSpeed) + " cm/s",
                            10, 20);
         ofPopStyle();
