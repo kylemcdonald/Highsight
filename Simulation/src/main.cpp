@@ -163,6 +163,7 @@ public:
         oscMotorsSend.sendMessage(msg, false);
     }
     void sendMotorPower(bool power) {
+        moveSpeedCps = 0;
         ofxOscMessage msg;
         msg.setAddress("/motor");
         msg.addIntArg(power ? 1 : 0);
@@ -178,6 +179,7 @@ public:
         }
     }
     void moveSpeedChange(float& value) {
+        ofLog() << "maxspeed " << value;
         sendMotorsEachCommand("/maxspeed", moveSpeedCps);
     }
     void exit() {
@@ -198,8 +200,8 @@ public:
         // set all values to corresponding motors
     }
     void updateConnexion() {
-        moveVecCps = ofVec3f((connexionPosition->x + connexionRotation->y) / 2,
-                             (connexionPosition->y + connexionRotation->x) / 2,
+        moveVecCps = ofVec3f(connexionRotation->y,
+                             connexionRotation->x,
                              connexionPosition->z);
         moveVecCps *= moveSpeedCps;
         
