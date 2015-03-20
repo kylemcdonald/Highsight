@@ -14,8 +14,7 @@
 
 #include "Motor.h"
 
-//const float resetDuration = 5000;
-//const float resetDurationConfirmation = 500;
+const float resetWaitTime = 2000;
 
 const float width = 607, depth = 608, height = 357;
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
@@ -141,6 +140,7 @@ public:
 
         sendMotorPower(true);
         sendMotorsAllCommand("/resume");
+        reset();
     }
     void reset() {
         lastResetTime = ofGetElapsedTimeMillis();
@@ -171,7 +171,6 @@ public:
         oscMotorsSend.sendMessage(msg, false);
     }
     void sendMotorPower(bool power) {
-        moveSpeedCps = homeSpeedCps;
         int powerInt = power ? 1 : 0;
         ofLog() << "/motor " << powerInt;
         ofxOscMessage msg;
@@ -291,11 +290,19 @@ public:
         sw.update(eyePosition);
         se.update(eyePosition);
         
-//        unsigned long curTime = ofGetElapsedTimeMillis();
-//        unsigned long curDuration = curTime - lastResetTime;
-//        if(curDuration < resetDuration + resetDurationConfirmation) {
-//            moveSpeedCps = ofMap(curDuration, 0, resetDuration, 0, maxSpeedCps, true);
-//        }
+        unsigned long curTime = ofGetElapsedTimeMillis();
+        unsigned long curDuration = curTime - lastResetTime;
+        if(curDuration > resetWaitTime && moveSpeedCps < maxSpeedCps) {
+            bool ready = true;
+            for(int i = 0; i < 4; i++) {
+                if(motorsSorted[i]->status.currentSpeed != 0) {
+                    ready = false;
+                }
+            }
+            if(ready) {
+                moveSpeedCps = maxSpeedCps;
+            }
+        }
         
         ofxOscMessage motors;
         motors.setAddress("/go");
