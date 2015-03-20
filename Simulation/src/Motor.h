@@ -10,11 +10,9 @@ public:
     float refPointUnits = 0;
     
     struct Status {
-        string statusMessage = "";
+        string statusMessage = "OK";
         float encoder0Pos = 0;
         float currentSpeed = 0;
-        int stepper = 0;
-        int encoder = 0;
     } status;
     
     ofVec3f eyeAttach, pillarAttach;
@@ -46,20 +44,27 @@ public:
         ofVec3f start = eyePosition + eyeAttach;
         ofDrawLine(pillarAttach, getFloorDrop());
         ofDrawLine(pillarAttach, start);
-        float curLength = (pillarAttach - start).length();
+        float targetLengthCm = (pillarAttach - start).length();
+        float targetLengthUnits = cmToUnits(targetLengthCm);
+        float curPositionUnits = status.encoder0Pos;
+        float curPositionCm = unitsToCm(curPositionUnits);
         ofTranslate(pillarAttach);
-        ofDrawBitmapString(ofToString(roundf(curLength)) + "cm\n" +
-                           ofToString(roundf(lengthSpeedCps)) + "cm/s\n" +
-                           "status: " + status.statusMessage + "\n" +
-                           ofToString(status.encoder0Pos) + " / encoder0Pos\n" +
-                           ofToString(status.currentSpeed) + " / currentSpeed\n" +
-                           ofToString(status.stepper) + " / stepper\n" +
-                           ofToString(status.encoder) + " / encoder",
+        ofDrawBitmapString("target\n  position: " + ofToString(roundf(targetLengthCm)) + "cm / " + ofToString(roundf(targetLengthUnits)) + " units\n" +
+                           "  speed: " + ofToString(roundf(lengthSpeedCps)) + "cm/s\n" +
+                           "current\n  status: " + status.statusMessage + "\n" +
+                           "  position: " + ofToString(roundf(curPositionCm)) + " cm / " + ofToString(roundf(curPositionUnits)) + " units\n" +
+                           "  speed: " + ofToString(status.currentSpeed) + " cm/s",
                            10, 20);
         ofPopStyle();
         ofPopMatrix();
     }
+    float unitsToCm(float units) {
+        return (refPointUnits - units) / unitsPerCm + refPointCm;
+    }
+    float cmToUnits(float cm) {
+        return (refPointCm - cm) * unitsPerCm + refPointUnits;
+    }
     float getLengthUnits() {
-        return (refPointCm - prevLength) * unitsPerCm + refPointUnits;
+        return cmToUnits(prevLength);
     }
 };

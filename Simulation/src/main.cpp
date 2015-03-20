@@ -1,8 +1,7 @@
 // todo:
-// show state
 // and handle emergency stop
 // add homing button
-// load config via json/xml
+// load all config via json/xml
 // add screenshot trigger
 // move osc output to threaded loop (not graphics loop)
 
@@ -54,7 +53,7 @@ public:
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
     float lookAngle = lookAngleDefault;
-    float maxSpeedCps = 100; // cm / second
+    float homeSpeedCps = 10, maxSpeedCps = 50; // cm / second
     unsigned long lastResetTime = 0;
     ofImage shadow;
     int liveMode;
@@ -63,17 +62,17 @@ public:
     ofxConnexion connexion;
     
     ofxPanel gui;
+    ofParameter<bool> everythingOk;
+    ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn;
     ofParameter<ofVec3f> eyePosition;
     ofParameter<ofVec3f> connexionPosition, connexionRotation;
-    ofParameter<bool> lockLookAngle = true;
-    ofParameter<bool> visitorMode = true;
-    ofParameter<float> moveSpeedCps = 0;
-    ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn;
+    ofParameter<bool> lockLookAngle;
+    ofParameter<bool> visitorMode;
+    ofParameter<float> moveSpeedCps;
     ofxButton visitorModeButton;
     
     void setup() {
         ofSetFrameRate(60);
-        ofBackground(128);
         
         ofXml config;
         if(!config.load("config.xml")) {
@@ -114,6 +113,7 @@ public:
         ofAddListener(connexion.connexionEvent, this, &ofApp::connexionData);
         
         gui.setup();
+        gui.add(everythingOk.set("Everything OK", true));
         gui.add(resetBtn.setup("Reset everything"));
         resetBtn.addListener(this, &ofApp::reset);
         gui.add(resetLookAngleBtn.setup("Reset look angle"));
@@ -144,6 +144,7 @@ public:
     }
     void reset() {
         lastResetTime = ofGetElapsedTimeMillis();
+        moveSpeedCps = homeSpeedCps;
         eyePosition = ofVec3f(0, 0, eyeStartHeight);
         resetLookAngle();
     }
@@ -170,7 +171,7 @@ public:
         oscMotorsSend.sendMessage(msg, false);
     }
     void sendMotorPower(bool power) {
-        moveSpeedCps = 0;
+        moveSpeedCps = homeSpeedCps;
         int powerInt = power ? 1 : 0;
         ofLog() << "/motor " << powerInt;
         ofxOscMessage msg;
@@ -201,7 +202,9 @@ public:
         updateConnexion();
         updateMouse();
         updateEye();
-        updateMotors();
+        if(everythingOk) {
+            updateMotors();
+        }
         updateOculus();
     }
     void updateStatus() {
@@ -214,8 +217,17 @@ public:
                 status.statusMessage = msg.getArgAsString(1);
                 status.encoder0Pos = msg.getArgAsFloat(2);
                 status.currentSpeed = msg.getArgAsFloat(3);
-                status.stepper = msg.getArgAsInt32(4);
-                status.encoder = msg.getArgAsInt32(5);
+            }
+        }
+        
+        everythingOk = true;
+        for(int i = 0; i < 4; i++) {
+            string& msg = motorsSorted[i]->status.statusMessage;
+            // whitelist of non-problematic states
+            if(!(msg == "OK" ||
+                 msg == "HOMING" ||
+                 msg == "HOMINGBACKOFF")) {
+                everythingOk = false;
             }
         }
     }
@@ -299,12 +311,18 @@ public:
         oscOculusSend.sendMessage(oculus);
     }
     void draw() {
+        if(everythingOk) {
+            ofBackground(128);
+        } else {
+            ofBackground(128, 0, 0);
+        }
+        
         cam.begin();
         ofPushMatrix();
         
         // setup the space for viewing
-        ofRotateX(-80);
-        ofRotateZ(-20);
+        ofRotateX(-70);
+        ofRotateZ(-15);
         ofScale(1.7, 1.7, 1.7);
         ofTranslate(0, 0, -height / 3);
         
