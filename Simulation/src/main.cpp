@@ -110,8 +110,9 @@ public:
     ofParameter<ofVec3f> eyePosition;
     ofParameter<ofVec3f> connexionPosition, connexionRotation;
     ofxButton resetLookAngleBtn, toggleFullscreenBtn;
+    ofxButton visitorModeButton;
     
-    bool visitorMode = true;
+    ofParameter<bool> visitorMode = true;
     
     void setup() {
         ofBackground(0);
@@ -189,6 +190,10 @@ public:
                                 ofVec3f(0, 0, eyeStartHeight),
                                 ofVec3f(-eyeWidthMax, -eyeDepthMax, eyeHeightMin),
                                 ofVec3f(+eyeWidthMax, +eyeDepthMax, eyeHeightMax)));
+        
+        
+        gui.add(visitorMode.set("Visitor mode", true));
+        
         
         sendMotorPower(true);
         sendMotorsAllCommand("/resume");
