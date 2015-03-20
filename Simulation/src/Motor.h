@@ -4,6 +4,7 @@
 
 class Motor {
 public:
+    string name;
     int id = 0;
     float unitsPerCm = 0;
     float refPointCm = 0;
@@ -19,7 +20,8 @@ public:
     float prevLength, lengthSpeedCps;
     Motor() : prevLength(0), lengthSpeedCps(0) {
     }
-    void setup(ofXml& xml, string address = "") {
+    void setup(string name, ofXml& xml, string address = "") {
+        this->name = name;
         id = xml.getIntValue(address + "id");
         unitsPerCm = xml.getFloatValue(address + "unitsPerCm");
         refPointCm = xml.getFloatValue(address + "refPoint/cm");
@@ -49,7 +51,8 @@ public:
         float curPositionUnits = status.encoder0Pos;
         float curPositionCm = unitsToCm(curPositionUnits);
         ofTranslate(pillarAttach);
-        ofDrawBitmapString("target\n  position: ~" + ofToString(roundf(targetLengthCm)) + "cm / ~" + ofToString(roundf(targetLengthUnits)) + " units\n" +
+        ofDrawBitmapString(name + " (" + ofToString(id) + ")\n"+
+                           "target\n  position: ~" + ofToString(roundf(targetLengthCm)) + "cm / ~" + ofToString(roundf(targetLengthUnits)) + " units\n" +
                            "  speed: ~" + ofToString(roundf(lengthSpeedCps)) + "cm/s\n" +
                            "current\n  status: " + status.statusMessage + "\n" +
                            "  position: ~" + ofToString(roundf(curPositionCm)) + " cm / ~" + ofToString(roundf(curPositionUnits)) + " units\n" +
