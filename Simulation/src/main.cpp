@@ -32,9 +32,6 @@ const float visitorFloor = 270; // cm
 const float visitorCeiling = 350; // cm
 const float visitorRadius = 230; // cm
 
-
-int lastReceivedMessageNumber[] = {0,0,0,0};
-
 enum LiveMode {
     LIVE_MODE_XY,
     LIVE_MODE_XZ
@@ -54,13 +51,19 @@ void drawLineHighlight(ofVec3f start, ofVec3f end) {
 class Motor {
 public:
     int id = 0;
-    float unitsPerCm = 179/4.0;
+    float unitsPerCm = 0;
     float refPointCm = 0;
     float refPointUnits = 0;
     
     ofVec3f eyeAttach, pillarAttach;
     float prevLength, lengthSpeedCps;
     Motor() : prevLength(0), lengthSpeedCps(0) {
+    }
+    void setup(ofXml& xml, string address = "") {
+        id = xml.getIntValue(address + "id");
+        unitsPerCm = xml.getFloatValue(address + "unitsPerCm");
+        refPointCm = xml.getFloatValue(address + "refPoint/cm");
+        refPointUnits = xml.getFloatValue(address + "refPoint/units");
     }
     void update(ofVec3f eyePosition) {
         ofVec3f start = eyePosition + eyeAttach;
@@ -120,23 +123,10 @@ public:
         
         moveSpeedCps = config.getFloatValue("motors/speed/max");
         
-        // need to load these motors with less copy paste
-        nw.id = config.getIntValue("motors/nw/id");
-        ne.id = config.getIntValue("motors/ne/id");
-        se.id = config.getIntValue("motors/se/id");
-        sw.id = config.getIntValue("motors/sw/id");
-        nw.unitsPerCm = config.getFloatValue("motors/nw/unitsPerCm");
-        nw.refPointCm = config.getFloatValue("motors/nw/refPoint/cm");
-        nw.refPointUnits = config.getFloatValue("motors/nw/refPoint/units");
-        ne.unitsPerCm = config.getFloatValue("motors/ne/unitsPerCm");
-        ne.refPointCm = config.getFloatValue("motors/ne/refPoint/cm");
-        ne.refPointUnits = config.getFloatValue("motors/ne/refPoint/units");
-        se.unitsPerCm = config.getFloatValue("motors/se/unitsPerCm");
-        se.refPointCm = config.getFloatValue("motors/se/refPoint/cm");
-        se.refPointUnits = config.getFloatValue("motors/se/refPoint/units");
-        sw.unitsPerCm = config.getFloatValue("motors/sw/unitsPerCm");
-        sw.refPointCm = config.getFloatValue("motors/sw/refPoint/cm");
-        sw.refPointUnits = config.getFloatValue("motors/sw/refPoint/units");
+        nw.setup(config, "motors/nw/");
+        ne.setup(config, "motors/ne/");
+        se.setup(config, "motors/se/");
+        sw.setup(config, "motors/sw/");
         
         oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
         oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
@@ -252,11 +242,15 @@ public:
             }
         }
         
+        updateMotors();
+        updateOculus();
+    }
+    void updateMotors() {
         nw.update(eyePosition);
         ne.update(eyePosition);
         sw.update(eyePosition);
         se.update(eyePosition);
-
+        
         ofxOscMessage motors;
         motors.setAddress("/go");
         float sorted[] = {0, 0, 0, 0};
@@ -269,7 +263,8 @@ public:
         motors.addFloatArg(sorted[2]);
         motors.addFloatArg(sorted[3]);
         oscMotorsSend.sendMessage(motors, false);
-        
+    }
+    void updateOculus() {
         ofxOscMessage oculus;
         oculus.setAddress("/lookAngle");
         oculus.addFloatArg(lookAngle+oculusLookAngleOffset);
