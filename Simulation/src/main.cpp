@@ -1,7 +1,11 @@
 // todo:
-// send osc to motors
-// move osc output to threaded loop (not graphcis loop)
+// fix startup speed situation
+// show homed states
+// and handle emergency stop
+// add homing button
 // load config via json/xml
+// add screenshot trigger
+// move osc output to threaded loop (not graphics loop)
 
 #include "ofMain.h"
 
@@ -52,21 +56,25 @@ public:
     int liveMode;
     bool live = false;
     ofParameter<bool> lockLookAngle = true;
+    ofParameter<bool> visitorMode = true;
+    
     ofxConnexion connexion;
+    
     ofxPanel gui;
     ofParameter<ofVec3f> eyePosition;
     ofParameter<ofVec3f> connexionPosition, connexionRotation;
     ofxButton resetLookAngleBtn, toggleFullscreenBtn;
     ofxButton visitorModeButton;
     
-    ofParameter<bool> visitorMode = true;
     
     void setup() {
         ofSetFrameRate(60);
         ofBackground(128);
         
         ofXml config;
-        config.load("config.xml");
+        if(!config.load("config.xml")) {
+            ofExit();
+        }
         
         moveSpeedCps = config.getFloatValue("motors/speed/max");
         
@@ -130,8 +138,14 @@ public:
         ofToggleFullscreen();
     }
     void connexionData(ConnexionData& data) {
-        connexionPosition = data.getNormalizedPosition();
-        connexionRotation = data.getNormalizedRotation();
+        // raw tilting right: +x pos, -y rot
+        // raw tilting forward: -y pos, -x rot
+        ofVec3f np = data.getNormalizedPosition();
+        ofVec3f nr = data.getNormalizedRotation();
+        // processed tilting right: +x pos, +y rot
+        // processed tilting forward: +y pos, +x rot
+        connexionPosition = ofVec3f(+np.x, -np.y, -np.z);
+        connexionRotation = ofVec3f(-np.x, -np.y, -np.z);
     }
     void sendMotorsAllCommand(string address) {
         ofxOscMessage msg;
@@ -161,8 +175,47 @@ public:
     void update() {
         updateConnexion();
         updateMouse();
+        updateEye();
+        updateMotors();
+        updateOculus();
+    }
+    void updateConnexion() {
+        moveVecCps = ofVec3f((connexionPosition->x + connexionRotation->y) / 2,
+                             (connexionPosition->y + connexionRotation->x) / 2,
+                             connexionPosition->z);
+        moveVecCps *= moveSpeedCps;
         
-        // clamp min position above floor
+        if(!lockLookAngle) {
+            float lookAngleDps = connexionRotation->z * lookAngleSpeedDps;
+            float lookAngleFps = lookAngleDps / ofGetTargetFrameRate();
+            lookAngle += lookAngleFps;
+        }
+    }
+    void updateMouse() {
+        ofVec2f mouseCur(mouseX, mouseY);
+        mouseVec = mouseCur - mouseStart;
+        if(mouseVec.length() > maxMouseDistance) {
+            mouseVec *= maxMouseDistance / mouseVec.length();
+        }
+        if(live && mouseVec.length() > minMouseDistance) {
+            float mouseLength = mouseVec.length();
+            moveVecCps = mouseVec / mouseLength;
+            moveVecCps.y *= -1;
+            moveVecCps *= ofNormalize(mouseLength, minMouseDistance, maxMouseDistance);
+            moveVecCps *= moveSpeedCps;
+            ofVec3f eyeUpdate = eyePosition;
+            if(liveMode == LIVE_MODE_XZ) { // swap z and y
+                moveVecCps.z = moveVecCps.y;
+                moveVecCps.y = 0;
+            }
+        }
+    }
+    void updateEye() {
+        ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
+        moveVecFps.rotate(lookAngle, ofVec3f(0, 0, 1));
+        eyePosition += moveVecFps;
+        
+        // hard limits on eye position
         eyePosition = ofVec3f(ofClamp(eyePosition->x, -eyeWidthMax, +eyeWidthMax),
                               ofClamp(eyePosition->y, -eyeDepthMax, +eyeDepthMax),
                               ofClamp(eyePosition->z, eyeHeightMin, eyeHeightMax));
@@ -179,9 +232,6 @@ public:
                                       eyePosition->z);
             }
         }
-        
-        updateMotors();
-        updateOculus();
     }
     void updateMotors() {
         nw.update(eyePosition);
@@ -207,45 +257,6 @@ public:
         oculus.setAddress("/lookAngle");
         oculus.addFloatArg(lookAngle+oculusLookAngleOffset);
         oscOculusSend.sendMessage(oculus);
-    }
-    void updateConnexion() {
-        moveVecCps = ofVec3f(connexionPosition->x,
-                             -connexionPosition->y,
-                             -connexionPosition->z);
-        moveVecCps.rotate(lookAngle, ofVec3f(0, 0, 1));
-        moveVecCps *= moveSpeedCps;
-        ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
-        eyePosition += moveVecFps;
-        
-        if(!lockLookAngle) {
-            float lookAngleDps = -connexionRotation->z * lookAngleSpeedDps;
-            float lookAngleFps = lookAngleDps / ofGetTargetFrameRate();
-            lookAngle += lookAngleFps;
-        }
-    }
-    void updateMouse() {
-        ofVec2f mouseCur(mouseX, mouseY);
-        mouseVec = mouseCur - mouseStart;
-        if(mouseVec.length() > maxMouseDistance) {
-            mouseVec *= maxMouseDistance / mouseVec.length();
-        }
-        if(live && mouseVec.length() > minMouseDistance) {
-            float mouseLength = mouseVec.length();
-            moveVecCps = mouseVec / mouseLength;
-            moveVecCps.y *= -1;
-            moveVecCps *= ofNormalize(mouseLength, minMouseDistance, maxMouseDistance);
-            moveVecCps *= moveSpeedCps;
-            ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
-            ofVec3f eyeUpdate = eyePosition;
-            if(liveMode == LIVE_MODE_XY) {
-                eyeUpdate.x += moveVecFps.x;
-                eyeUpdate.y += moveVecFps.y;
-            } else if(liveMode == LIVE_MODE_XZ) {
-                eyeUpdate.x += moveVecFps.x;
-                eyeUpdate.z += moveVecFps.y;
-            }
-            eyePosition = eyeUpdate;
-        }
     }
     void draw() {
         cam.begin();
