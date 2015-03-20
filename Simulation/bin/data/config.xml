@@ -56,7 +56,7 @@
     </motors>
     <oculus>
         <lookAngle>
-            <default>180</default>
+            <default>200</default>
             <offset>0</offset>
         </lookAngle>
         <osc>
