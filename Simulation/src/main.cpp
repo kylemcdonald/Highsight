@@ -1,5 +1,5 @@
 // todo:
-// show homed states
+// show state
 // and handle emergency stop
 // add homing button
 // load config via json/xml
@@ -15,8 +15,8 @@
 
 #include "Motor.h"
 
-const float resetDuration = 5000;
-const float resetDurationConfirmation = 500;
+//const float resetDuration = 5000;
+//const float resetDurationConfirmation = 500;
 
 const float width = 607, depth = 608, height = 357;
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
@@ -69,7 +69,6 @@ public:
     ofParameter<float> moveSpeedCps = 0;
     ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn;
     ofxButton visitorModeButton;
-    
     
     void setup() {
         ofSetFrameRate(60);
@@ -139,6 +138,7 @@ public:
     }
     void reset() {
         lastResetTime = ofGetElapsedTimeMillis();
+        eyePosition = ofVec3f(0, 0, eyeStartHeight);
         resetLookAngle();
     }
     void resetLookAngle() {
@@ -150,12 +150,12 @@ public:
     void connexionData(ConnexionData& data) {
         // raw right push+tilt: +x pos, -y rot
         // raw forward push+tilt: -y pos, -x rot
-        ofVec3f np = data.getNormalizedPosition();
-        ofVec3f nr = data.getNormalizedRotation();
+        ofVec3f npos = data.getNormalizedPosition();
+        ofVec3f nrot = data.getNormalizedRotation();
         // processed right push+tilt: +x pos, +y rot
         // processed forward push+tilt: +y pos, +x rot
-        connexionPosition = ofVec3f(+np.x, -np.y, -np.z);
-        connexionRotation = ofVec3f(-nr.x, -nr.y, -nr.z);
+        connexionPosition = ofVec3f(+npos.x, -npos.y, -npos.z);
+        connexionRotation = ofVec3f(-nrot.x, -nrot.y, -nrot.z);
     }
     void sendMotorsAllCommand(string address) {
         ofxOscMessage msg;
@@ -186,11 +186,16 @@ public:
         connexion.stop();
     }
     void update() {
+        updateStatus();
         updateConnexion();
         updateMouse();
         updateEye();
         updateMotors();
         updateOculus();
+    }
+    void updateStatus() {
+        // while osc messages are available
+        // set all values to corresponding motors
     }
     void updateConnexion() {
         moveVecCps = ofVec3f((connexionPosition->x + connexionRotation->y) / 2,
@@ -252,11 +257,11 @@ public:
         sw.update(eyePosition);
         se.update(eyePosition);
         
-        unsigned long curTime = ofGetElapsedTimeMillis();
-        unsigned long curDuration = curTime - lastResetTime;
-        if(curDuration < resetDuration + resetDurationConfirmation) {
-            moveSpeedCps = ofMap(curDuration, 0, resetDuration, 0, maxSpeedCps, true);
-        }
+//        unsigned long curTime = ofGetElapsedTimeMillis();
+//        unsigned long curDuration = curTime - lastResetTime;
+//        if(curDuration < resetDuration + resetDurationConfirmation) {
+//            moveSpeedCps = ofMap(curDuration, 0, resetDuration, 0, maxSpeedCps, true);
+//        }
         
         ofxOscMessage motors;
         motors.setAddress("/go");
