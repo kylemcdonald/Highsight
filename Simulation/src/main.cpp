@@ -31,7 +31,7 @@ const float eyeHeightMin = eyePadding + safetyFloor, eyeHeightMax = height - eye
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
 //  safe zone when controlled by visitor - a stubby cylinder
-const float visitorFloor = 250; // cm
+const float visitorFloor = 270; // cm
 const float visitorCeiling = 350; // cm
 const float visitorRadius = 230; // cm
 
