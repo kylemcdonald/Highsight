@@ -23,6 +23,9 @@ const float maxMouseDistance = 250;
 const float lookAngleSpeedDps = 90; // degrees / second
 const float frameRate = 60;
 
+const float lookAngleDefault = 180; // startup angle
+const float oculusLookAngleOffset = 180; // correct for angle between kiosk and carriage
+
 const float eyeHeightMin = eyePadding, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
@@ -89,7 +92,7 @@ public:
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
     float moveSpeedCps = 100; // cm / second
-    float lookAngle = 0;
+    float lookAngle = lookAngleDefault;
     ofImage shadow;
     int liveMode;
     bool live = false;
@@ -254,7 +257,7 @@ public:
         
         ofxOscMessage oculus;
         oculus.setAddress("/lookAngle");
-        oculus.addFloatArg(lookAngle);
+        oculus.addFloatArg(lookAngle+oculusLookAngleOffset);
         oscOculusSend.sendMessage(oculus);
     }
     void updateConnexion() {
