@@ -14,7 +14,7 @@
 const float width = 607, depth = 608, height = 357;
 //const float width = inchesToCm(74.5), depth = inchesToCm(111.5), height = inchesToCm(69);
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
-const float eyeStartHeight = 25;
+const float eyeStartHeight = 100;
 //const float eyeWidth = 1.25, eyeDepth = 1.25, attachHeight = 0;
 const float eyeWidth = 7.6, eyeDepth = 7.6, attachHeight = 0;
 const float eyePadding = 0;
@@ -26,7 +26,8 @@ const float frameRate = 60;
 const float lookAngleDefault = 180; // startup angle
 const float oculusLookAngleOffset = 180; // correct for angle between kiosk and carriage
 
-const float eyeHeightMin = eyePadding, eyeHeightMax = height - eyePadding;
+const float safetyFloor = 80; // never go lower than this!
+const float eyeHeightMin = eyePadding + safetyFloor, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
 int lastReceivedMessageNumber[] = {0,0,0,0};
