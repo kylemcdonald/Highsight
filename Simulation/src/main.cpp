@@ -18,9 +18,7 @@
 const float resetWaitTime = 2000;
 
 const float width = 607, depth = 608, height = 357;
-//const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
 const float eyeStartHeight = 100;
-//const float eyeWidth = 1.25, eyeDepth = 1.25, attachHeight = 0;
 const float eyeWidth = 7.6, eyeDepth = 7.6, attachHeight = 0;
 const float minMouseDistance = 20;
 const float maxMouseDistance = 250;
@@ -74,10 +72,10 @@ public:
         
         maxSpeedCps = config.getFloatValue("motors/speed/max");
         
-        nw.setup(config, "motors/nw/");
-        ne.setup(config, "motors/ne/");
-        se.setup(config, "motors/se/");
-        sw.setup(config, "motors/sw/");
+        nw.setup("nw", config, "motors/nw/");
+        ne.setup("ne", config, "motors/ne/");
+        se.setup("se", config, "motors/se/");
+        sw.setup("sw", config, "motors/sw/");
         motorsSorted.resize(4);
         motorsSorted[nw.id] = &nw;
         motorsSorted[ne.id] = &ne;
