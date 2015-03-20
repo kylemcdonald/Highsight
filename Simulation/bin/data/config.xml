@@ -58,6 +58,7 @@
         <lookAngle>
             <default>200</default>
             <offset>0</offset>
+            <speed>90</speed> <!-- degrees per second -->
         </lookAngle>
         <osc>
             <sendPort>9000</sendPort>
