@@ -30,6 +30,12 @@ const float safetyFloor = 80; // never go lower than this!
 const float eyeHeightMin = eyePadding + safetyFloor, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
+//  safe zone when controlled by visitor - a stubby cylinder
+const float visitorFloor = 250; // cm
+const float visitorCeiling = 350; // cm
+const float visitorRadius = 230; // cm
+
+
 int lastReceivedMessageNumber[] = {0,0,0,0};
 
 enum LiveMode {
@@ -104,6 +110,8 @@ public:
     ofParameter<ofVec3f> eyePosition;
     ofParameter<ofVec3f> connexionPosition, connexionRotation;
     ofxButton resetLookAngleBtn, toggleFullscreenBtn;
+    
+    bool visitorMode = true;
     
     void setup() {
         ofBackground(0);
@@ -229,6 +237,20 @@ public:
         eyePosition = ofVec3f(ofClamp(eyePosition->x, -eyeWidthMax, +eyeWidthMax),
                               ofClamp(eyePosition->y, -eyeDepthMax, +eyeDepthMax),
                               ofClamp(eyePosition->z, eyeHeightMin, eyeHeightMax));
+        
+        if (visitorMode) {
+            // enforce audience-control flight zone
+            eyePosition = ofVec3f(ofClamp(eyePosition->x, -visitorRadius, +visitorRadius),
+                                  ofClamp(eyePosition->y, -visitorRadius, +visitorRadius),
+                                  ofClamp(eyePosition->z, visitorFloor, visitorCeiling));
+            float radial = sqrt(eyePosition->x * eyePosition->x + eyePosition->y * eyePosition->y);
+            if (radial > visitorRadius) {
+                eyePosition = ofVec3f(eyePosition->x * visitorRadius / radial,
+                                      eyePosition->y * visitorRadius / radial,
+                                      eyePosition->z);
+                
+            }
+        }
         
         nw.update(eyePosition);
         ne.update(eyePosition);
