@@ -26,9 +26,6 @@ const float minMouseDistance = 20;
 const float maxMouseDistance = 250;
 const float lookAngleSpeedDps = 90; // degrees / second
 
-const float lookAngleDefault = 180; // startup angle
-const float oculusLookAngleOffset = 180; // correct for angle between kiosk and carriage
-
 const float eyePadding = 40;
 const float eyeHeightMin = 80, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
@@ -52,7 +49,7 @@ public:
     ofEasyCam cam;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
-    float lookAngle = lookAngleDefault;
+    float lookAngle, lookAngleDefault;
     float homeSpeedCps = 10, maxSpeedCps = 50; // cm / second
     unsigned long lastResetTime = 0;
     ofImage shadow;
@@ -67,6 +64,7 @@ public:
     ofParameter<ofVec3f> eyePosition;
     ofParameter<ofVec3f> connexionPosition, connexionRotation;
     ofParameter<bool> lockLookAngle;
+    ofParameter<float> lookAngleOffset;
     ofParameter<bool> visitorMode;
     ofParameter<float> moveSpeedCps;
     ofxButton visitorModeButton;
@@ -91,6 +89,9 @@ public:
         motorsSorted[se.id] = &se;
         motorsSorted[sw.id] = &sw;
         
+        lookAngleDefault = config.getFloatValue("oculus/lookAngle/default");
+        lookAngleOffset = config.getFloatValue("oculus/lookAngle/offset");
+        
         oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
         oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
         oscMotorsReceive.setup(config.getIntValue("motors/osc/receivePort"));
@@ -114,13 +115,15 @@ public:
         
         gui.setup();
         gui.add(everythingOk.set("Everything OK", true));
+        gui.add(visitorMode.set("Visitor mode", true));
+        gui.add(toggleFullscreenBtn.setup("Toggle fullscreen"));
+        toggleFullscreenBtn.addListener(this, &ofApp::toggleFullscreen);
         gui.add(resetBtn.setup("Reset everything"));
         resetBtn.addListener(this, &ofApp::reset);
         gui.add(resetLookAngleBtn.setup("Reset look angle"));
         resetLookAngleBtn.addListener(this, &ofApp::resetLookAngle);
-        gui.add(toggleFullscreenBtn.setup("Toggle fullscreen"));
-        toggleFullscreenBtn.addListener(this, &ofApp::toggleFullscreen);
         gui.add(lockLookAngle.set("Lock look angle", false));
+        gui.add(lookAngleOffset.set("Look angle offset", lookAngleOffset, -180, +180));
         gui.add(moveSpeedCps.set("Move speed", 0, 0, maxSpeedCps));
         moveSpeedCps.addListener(this, &ofApp::moveSpeedChange);
         gui.add(connexionPosition.set("Connexion Position",
@@ -135,9 +138,6 @@ public:
                                 ofVec3f(0, 0, eyeStartHeight),
                                 ofVec3f(-eyeWidthMax, -eyeDepthMax, eyeHeightMin),
                                 ofVec3f(+eyeWidthMax, +eyeDepthMax, eyeHeightMax)));
-        
-        
-        gui.add(visitorMode.set("Visitor mode", true));
 
         sendMotorPower(true);
         sendMotorsAllCommand("/resume");
@@ -320,7 +320,7 @@ public:
     void updateOculus() {
         ofxOscMessage oculus;
         oculus.setAddress("/lookAngle");
-        oculus.addFloatArg(lookAngle+oculusLookAngleOffset);
+        oculus.addFloatArg(lookAngle+lookAngleOffset);
         oscOculusSend.sendMessage(oculus);
     }
     void draw() {

@@ -55,6 +55,10 @@
         </sw>
     </motors>
     <oculus>
+        <lookAngle>
+            <default>180</default>
+            <offset>180</offset>
+        </lookAngle>
         <osc>
             <sendPort>9000</sendPort>
         </osc>
