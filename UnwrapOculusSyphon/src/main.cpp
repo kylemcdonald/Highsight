@@ -42,9 +42,7 @@ public:
         oculusRift.setup();
 	}
     void saveScreen(string prefix) {
-//        ofPixels pix;
-//        cam.getTexture().readToPixels(pix);
-//        ofSaveImage(pix, prefix + ofGetTimestampString() + "-camera.tiff");
+        cam.save(prefix + ofGetTimestampString() + "-camera.tiff");
         ofSaveScreen(prefix + ofGetTimestampString() + "-oculus.tiff");
     }
     void update() {
@@ -86,7 +84,9 @@ public:
         ofScale(100, -100, 100); // avoid clipping
         ofRotateX(+90);
         ofRotateZ(+lookAngle);
-        fisheye.draw(cam.getTexture());
+        cam.bind();
+        fisheye.draw();
+        cam.unbind();
         ofPopMatrix();
         
         if(debug) {
@@ -106,10 +106,6 @@ public:
 		if(key == 'f') {
 			ofToggleFullscreen();
 		}
-        if(key == ' ') {
-            string path = ofGetTimestampString() + ".jpg";
-//            ofSaveImage(cam.getColorPixels(), path);
-        }
 	}
 };
 

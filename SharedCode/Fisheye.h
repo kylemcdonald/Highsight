@@ -33,17 +33,11 @@ public:
             }
         }
     }
-    void draw(const ofTexture& tex, bool drawWireframe = false) {
+    void draw() {
         ofPushStyle();
         ofSetColor(ofColor::white);
-        tex.bind();
         ofRotateX(180);
         mesh.drawFaces();
-        tex.unbind();
-        if(drawWireframe) {
-            ofDisableDepthTest();
-            mesh.drawWireframe();
-        }
         ofPopStyle();
     }
 };
