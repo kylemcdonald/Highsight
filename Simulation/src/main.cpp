@@ -93,9 +93,6 @@ public:
     ofxOscReceiver oscMotorsReceive;
     Motor nw, ne, sw, se;
     ofEasyCam cam;
-    ofImage roomTexture, eyeTexture;
-    ofMesh roomMesh, eyeMesh;
-    ofxAssimpModelLoader roomModel, eyeModel;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
     float moveSpeedCps = 100; // cm / second
@@ -131,14 +128,6 @@ public:
         oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
         oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
         oscMotorsReceive.setup(config.getIntValue("motors/osc/receivePort"));
-        
-        roomModel.loadModel("room-amb.dae");
-        roomTexture.load("room-amb.jpg");
-        roomMesh = roomModel.getMesh(0);
-        
-        eyeModel.loadModel("eye-amb.dae");
-        eyeTexture.load("eye-amb.jpg");
-        eyeMesh = eyeModel.getMesh(0);
         
         mouseStart.set(0, 0);
         shadow.load("shadow.png");
@@ -321,10 +310,6 @@ public:
         ofTranslate(0, 0, -height / 3);
         
         // draw the room
-        ofSetColor(255);
-        roomTexture.bind();
-        roomMesh.drawFaces();
-        roomTexture.unbind();
         
         ofDisableDepthTest();
         
@@ -341,11 +326,7 @@ public:
         
         ofPushMatrix();
         ofTranslate(eyePosition);
-        eyeTexture.bind();
-        ofEnableDepthTest();
-        eyeMesh.drawFaces();
-        ofDisableDepthTest();
-        eyeTexture.unbind();
+        // draw the carriage
         ofSetColor(ofColor::black);
         ofRotate(lookAngle);
         ofDrawLine(0, 0, 0, 90);
