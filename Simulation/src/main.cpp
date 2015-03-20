@@ -17,6 +17,7 @@
 #include "Motor.h"
 
 const float resetDuration = 5000;
+const float resetDurationConfirmation = 500;
 
 const float width = 607, depth = 608, height = 357;
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
@@ -254,8 +255,8 @@ public:
         
         unsigned long curTime = ofGetElapsedTimeMillis();
         unsigned long curDuration = curTime - lastResetTime;
-        if(curDuration < resetDuration) {
-            moveSpeedCps = ofMap(curDuration, 0, resetDuration, 0, maxSpeedCps);
+        if(curDuration < resetDuration + resetDurationConfirmation) {
+            moveSpeedCps = ofMap(curDuration, 0, resetDuration, 0, maxSpeedCps, true);
         }
         
         ofxOscMessage motors;
