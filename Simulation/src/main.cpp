@@ -16,6 +16,8 @@
 
 #include "Motor.h"
 
+const float resetDuration = 5000;
+
 const float width = 607, depth = 608, height = 357;
 //const float eyeWidth = 20, eyeDepth = 20, attachHeight = 3;
 const float eyeStartHeight = 100;
@@ -50,20 +52,22 @@ public:
     ofEasyCam cam;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
-    float moveSpeedCps = 100; // cm / second
     float lookAngle = lookAngleDefault;
+    float maxSpeedCps = 100; // cm / second
+    unsigned long lastResetTime = 0;
     ofImage shadow;
     int liveMode;
     bool live = false;
-    ofParameter<bool> lockLookAngle = true;
-    ofParameter<bool> visitorMode = true;
     
     ofxConnexion connexion;
     
     ofxPanel gui;
     ofParameter<ofVec3f> eyePosition;
     ofParameter<ofVec3f> connexionPosition, connexionRotation;
-    ofxButton resetLookAngleBtn, toggleFullscreenBtn;
+    ofParameter<bool> lockLookAngle = true;
+    ofParameter<bool> visitorMode = true;
+    ofParameter<float> moveSpeedCps = 0;
+    ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn;
     ofxButton visitorModeButton;
     
     
@@ -76,7 +80,7 @@ public:
             ofExit();
         }
         
-        moveSpeedCps = config.getFloatValue("motors/speed/max");
+        maxSpeedCps = config.getFloatValue("motors/speed/max");
         
         nw.setup(config, "motors/nw/");
         ne.setup(config, "motors/ne/");
@@ -105,6 +109,15 @@ public:
         ofAddListener(connexion.connexionEvent, this, &ofApp::connexionData);
         
         gui.setup();
+        gui.add(resetBtn.setup("Reset everything"));
+        resetBtn.addListener(this, &ofApp::reset);
+        gui.add(resetLookAngleBtn.setup("Reset look angle"));
+        resetLookAngleBtn.addListener(this, &ofApp::resetLookAngle);
+        gui.add(toggleFullscreenBtn.setup("Toggle fullscreen"));
+        toggleFullscreenBtn.addListener(this, &ofApp::toggleFullscreen);
+        gui.add(lockLookAngle.set("Lock look angle", false));
+        gui.add(moveSpeedCps.set("Move speed", 0, 0, maxSpeedCps));
+        moveSpeedCps.addListener(this, &ofApp::moveSpeedChange);
         gui.add(connexionPosition.set("Connexion Position",
                                       ofVec3f(),
                                       ofVec3f(-1, -1, -1),
@@ -113,11 +126,6 @@ public:
                                       ofVec3f(),
                                       ofVec3f(-1, -1, -1),
                                       ofVec3f(+1, +1, +1)));
-        gui.add(resetLookAngleBtn.setup("Reset look angle"));
-        gui.add(toggleFullscreenBtn.setup("Toggle fullscreen"));
-        gui.add(lockLookAngle.set("Lock look angle", false));
-        resetLookAngleBtn.addListener(this, &ofApp::resetLookAngle);
-        toggleFullscreenBtn.addListener(this, &ofApp::toggleFullscreen);
         gui.add(eyePosition.set("Eye position",
                                 ofVec3f(0, 0, eyeStartHeight),
                                 ofVec3f(-eyeWidthMax, -eyeDepthMax, eyeHeightMin),
@@ -125,11 +133,13 @@ public:
         
         
         gui.add(visitorMode.set("Visitor mode", true));
-        
-        
+
         sendMotorPower(true);
         sendMotorsAllCommand("/resume");
-        sendMotorsEachCommand("/maxspeed", moveSpeedCps);
+    }
+    void reset() {
+        lastResetTime = ofGetElapsedTimeMillis();
+        resetLookAngle();
     }
     void resetLookAngle() {
         lookAngle = lookAngleDefault;
@@ -138,12 +148,12 @@ public:
         ofToggleFullscreen();
     }
     void connexionData(ConnexionData& data) {
-        // raw tilting right: +x pos, -y rot
-        // raw tilting forward: -y pos, -x rot
+        // raw right push+tilt: +x pos, -y rot
+        // raw forward push+tilt: -y pos, -x rot
         ofVec3f np = data.getNormalizedPosition();
         ofVec3f nr = data.getNormalizedRotation();
-        // processed tilting right: +x pos, +y rot
-        // processed tilting forward: +y pos, +x rot
+        // processed right push+tilt: +x pos, +y rot
+        // processed forward push+tilt: +y pos, +x rot
         connexionPosition = ofVec3f(+np.x, -np.y, -np.z);
         connexionRotation = ofVec3f(-np.x, -np.y, -np.z);
     }
@@ -166,6 +176,9 @@ public:
             msg.addFloatArg(value);
             oscMotorsSend.sendMessage(msg, false);
         }
+    }
+    void moveSpeedChange(float& value) {
+        sendMotorsEachCommand("/maxspeed", moveSpeedCps);
     }
     void exit() {
         sendMotorsAllCommand("/stop");
@@ -239,6 +252,12 @@ public:
         sw.update(eyePosition);
         se.update(eyePosition);
         
+        unsigned long curTime = ofGetElapsedTimeMillis();
+        unsigned long curDuration = curTime - lastResetTime;
+        if(curDuration < resetDuration) {
+            moveSpeedCps = ofMap(curDuration, 0, resetDuration, 0, maxSpeedCps);
+        }
+        
         ofxOscMessage motors;
         motors.setAddress("/go");
         float sorted[] = {0, 0, 0, 0};
@@ -284,11 +303,17 @@ public:
         ofDrawBox(0, 0, 0, eyeWidth, eyeDepth, attachHeight);
         ofSetColor(ofColor::white);
         ofRotate(lookAngle);
-        ofDrawLine(0, 0, 0, 90);
-        ofRotateY(45);
-        ofDrawTriangle(5, 90, 0, 100, -5, 90);
-        ofRotateY(90);
-        ofDrawTriangle(5, 90, 0, 100, -5, 90);
+        // draw arrow twice: once at eye, once on floor
+        for(int i = 0; i < 2; i++) {
+            ofPushMatrix();
+            ofDrawLine(0, 0, 0, 90);
+            ofRotateY(45);
+            ofDrawTriangle(5, 90, 0, 100, -5, 90);
+            ofRotateY(90);
+            ofDrawTriangle(5, 90, 0, 100, -5, 90);
+            ofPopMatrix();
+            ofTranslate(0, 0, -eyePosition->z);
+        }
         ofPopMatrix();
         
         ofPushStyle();
@@ -392,7 +417,7 @@ public:
             liveMode = LIVE_MODE_XZ;
         }
         if(key == 'r') {
-            resetLookAngle();
+            reset();
         }
         if(key == 'f') {
             toggleFullscreen();
