@@ -241,7 +241,7 @@ public:
         }
         
         everythingOk = true;
-        for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < 3; i++) {//TEMP FIX! ARGH!
             string& msg = motorsSorted[i]->status.statusMessage;
             // whitelist of non-problematic states
             if(!(msg == "OK" ||
