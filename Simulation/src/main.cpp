@@ -303,6 +303,11 @@ public:
                                       eyePosition->y * visitorRadius / radial,
                                       eyePosition->z);
             }
+            int corner = 0;
+            float angle = 45 + 90 * corner;
+            eyePosition = eyePosition->getRotated(+angle, ofVec3f(0, 0, 1));
+            eyePosition = ofVec3f(MAX(0, eyePosition->x), eyePosition->y, eyePosition->z);
+            eyePosition = eyePosition->getRotated(-angle, ofVec3f(0, 0, 1));
         }
     }
     void updateMotors() {
