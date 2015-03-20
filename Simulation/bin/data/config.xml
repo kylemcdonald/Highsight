@@ -1,5 +1,18 @@
 <xml>
+    <carriage>
+        <geometry>
+            <width>15.2</width> <!-- from west to east edge -->
+            <depth>15.2</depth> <!-- from south to north edge -->
+            <height>16</height> <!-- approximate helmet height -->
+        </geometry>
+        <startHeight>0</startHeight>
+    </carriage>
     <motors>
+        <geometry>
+            <width>607</width> <!-- from west to east edge -->
+            <depth>608</depth> <!-- from south to north edge -->
+            <height>357</height> <!-- from floor to feed point -->
+        </geometry>
         <speed> <!-- cm / s -->
             <max>50</max>
         </speed>
