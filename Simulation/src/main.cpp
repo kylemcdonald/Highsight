@@ -170,6 +170,7 @@ public:
         // raw forward push+tilt: -y pos, -x rot
         ofVec3f npos = data.getNormalizedPosition();
         ofVec3f nrot = data.getNormalizedRotation();
+        
         // processed right push+tilt: +x pos, +y rot
         // processed forward push+tilt: +y pos, +x rot
         connexionPosition = ofVec3f(+npos.x, -npos.y, -npos.z);
@@ -220,8 +221,8 @@ public:
         updateStatus();
         updateConnexion();
         updateMouse();
-        updateEye();
         if(everythingOk) {
+            updateEye();
             updateMotors();
         }
         updateOculus();
