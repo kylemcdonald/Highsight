@@ -482,9 +482,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E4B69B5A0A3A1756003C02F2 /* ofApp */ = {
+		E4B69B5A0A3A1756003C02F2 /* HighsightOculus */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E4B69B5F0A3A1757003C02F2 /* Build configuration list for PBXNativeTarget "ofApp" */;
+			buildConfigurationList = E4B69B5F0A3A1757003C02F2 /* Build configuration list for PBXNativeTarget "HighsightOculus" */;
 			buildPhases = (
 				E4B69B580A3A1756003C02F2 /* Sources */,
 				E4B69B590A3A1756003C02F2 /* Frameworks */,
@@ -496,7 +496,7 @@
 			dependencies = (
 				E4EEB9AC138B136A00A80321 /* PBXTargetDependency */,
 			);
-			name = ofApp;
+			name = HighsightOculus;
 			productName = myOFApp;
 			productReference = E4B69B5B0A3A1756003C02F2 /* ofAppDebug.app */;
 			productType = "com.apple.product-type.application";
@@ -509,7 +509,7 @@
 			attributes = {
 				LastUpgradeCheck = 0420;
 			};
-			buildConfigurationList = E4B69B4D0A3A1720003C02F2 /* Build configuration list for PBXProject "ofApp" */;
+			buildConfigurationList = E4B69B4D0A3A1720003C02F2 /* Build configuration list for PBXProject "HighsightOculus" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -530,7 +530,7 @@
 			);
 			projectRoot = "";
 			targets = (
-				E4B69B5A0A3A1756003C02F2 /* ofApp */,
+				E4B69B5A0A3A1756003C02F2 /* HighsightOculus */,
 			);
 		};
 /* End PBXProject section */
@@ -746,7 +746,7 @@
 					/Users/kyle/Documents/openFrameworks/addons/ofxOculusDK2/libs/LibOVR/Lib/x64/VS2012,
 					/Users/kyle/Documents/openFrameworks/addons/ofxOculusDK2/libs/LibOVR/Lib/x64/VS2013,
 				);
-				PRODUCT_NAME = ofAppDebug;
+				PRODUCT_NAME = HighsightOculusDebug;
 				SDKROOT = macosx10.9;
 				USER_HEADER_SEARCH_PATHS = "../../../addons/ofxOculusDK2/libs/LibOVR/Include/ ../../../addons/ofxBlackmagic/libs/DeckLink/include/ ../../../addons/ofxOsc/libs/oscpack/src/";
 				WRAPPER_EXTENSION = app;
@@ -842,7 +842,7 @@
 					/Users/kyle/Documents/openFrameworks/addons/ofxOculusDK2/libs/LibOVR/Lib/x64/VS2012,
 					/Users/kyle/Documents/openFrameworks/addons/ofxOculusDK2/libs/LibOVR/Lib/x64/VS2013,
 				);
-				PRODUCT_NAME = ofApp;
+				PRODUCT_NAME = HighsightOculus;
 				SDKROOT = macosx10.9;
 				USER_HEADER_SEARCH_PATHS = "../../../addons/ofxOculusDK2/libs/LibOVR/Include/ ../../../addons/ofxBlackmagic/libs/DeckLink/include/ ../../../addons/ofxOsc/libs/oscpack/src/";
 				WRAPPER_EXTENSION = app;
@@ -852,7 +852,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E4B69B4D0A3A1720003C02F2 /* Build configuration list for PBXProject "ofApp" */ = {
+		E4B69B4D0A3A1720003C02F2 /* Build configuration list for PBXProject "HighsightOculus" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E4B69B4E0A3A1720003C02F2 /* Debug */,
@@ -861,7 +861,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E4B69B5F0A3A1757003C02F2 /* Build configuration list for PBXNativeTarget "ofApp" */ = {
+		E4B69B5F0A3A1757003C02F2 /* Build configuration list for PBXNativeTarget "HighsightOculus" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E4B69B600A3A1757003C02F2 /* Debug */,
