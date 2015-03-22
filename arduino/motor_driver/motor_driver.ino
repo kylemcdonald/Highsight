@@ -34,6 +34,9 @@
 // EEPROM library
 #include <EEPROM.h>
 
+// PERSISTENT STORAGE locations
+const int EEPROM_MOTOR_ID = 0;
+const int EEPROM_REMEMBER_POSITION = 1; 
 
 // IMPORTANT SETTINGS ----------------------------
 
@@ -58,7 +61,9 @@ const byte encoder0PinAMask = 0x04;
 const int encoder0PinB = 3;  // black   PORTD BIT 3
 const byte encoder0PinBMask = 0x08;
 const int encoder0PinZ = 4;  // orange
-volatile long encoder0Pos = 0;
+volatile long encoder0Pos __attribute__ ((section (".noinit")));
+volatile long encoder0Checksum __attribute__ ((section (".noinit")));
+const long encoder0ChecksumKey = 314159265L;
 volatile long encoder0Zero = 0;
 volatile long encoder0ZeroState = 0;
 
@@ -103,7 +108,7 @@ double currentSpeed = 0;
 // NETWORK SETUP  -------
 
 // get motor id (0 for NW motor, 1 for NE, 2 for SE, 3 for SW) from EEPROM address 0
-int MOTOR_ID = EEPROM.read(0);
+int MOTOR_ID = EEPROM.read(EEPROM_MOTOR_ID);
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, MOTOR_ID };
 IPAddress listeningIP(192,168,LOCALNET,42+MOTOR_ID); // you need to set this
@@ -149,8 +154,9 @@ enum stateEnum {
 
 void setup() {
   setupEthernet();
-  setupEncoder();
-  setupMotorDriver(); 
+  homed = setupEncoder();
+  if (homed) state = OK;
+  setupMotorDriver(homed); 
   setupEndstops();
   setupPID();
   
@@ -313,20 +319,32 @@ void pidSetMaxSpeed(float ms) {
   myPID.SetOutputLimits(-ms, ms);
 }
 
-void setupEncoder() {
+// setupEncoder will check if encoder position is retained in RAM after a crash
+// and return true if so
+bool setupEncoder() {
   pinMode(encoder0PinA, INPUT); 
   pinMode(encoder0PinB, INPUT); 
   pinMode(encoder0PinZ, INPUT);
   // encoder pin on interrupt 0 (pin 2)
   attachInterrupt(0, doEncoderA, RISING);
+  
+  if (EEPROM.read(EEPROM_REMEMBER_POSITION) == 1) {
+    // check if encoder value can be recovered after crash
+    if (encoder0Pos ^ encoder0ChecksumKey == encoder0Checksum) {
+      // yes! let's claim we're homed
+      return true;
+    }
+  }
+
+  return false;
 }
 
-void setupMotorDriver() {
+void setupMotorDriver(bool poweron) {
   //pinMode(PULSEPIN, OUTPUT); pwm() will do this
   pinMode(DIRPIN, OUTPUT);
   pinMode(ENAPIN, OUTPUT);
   
-  digitalWrite(ENAPIN, 0); // disable motor driver
+  digitalWrite(ENAPIN, poweron); // disable motor driver
   
   // set up interrupts for motor speed control
   Timer1.initialize(1000);
@@ -416,6 +434,8 @@ void doEncoderA() {
   else {
     encoder0Pos ++;
   }
+  
+  encoder0Checksum = encoder0Pos ^ encoder0ChecksumKey;
 }
 
 
@@ -614,6 +634,27 @@ void oscFreeRun(OscMessage &m) {
   }
 }
 
+
+// force calibration (one motor at a time only!)
+void oscSetPosition(OscMessage &m) {
+  if (m.getInt(0) == MOTOR_ID) {
+    encoder0Pos = (long)m.getFloat(1);
+  }
+}
+
+
+// preferences: try to remember encoder value through a crash
+void oscRememberPosition(OscMessage &m) {
+  if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
+    int p = m.getInt(m.size()-1);
+    if (p) {
+      EEPROM.write(EEPROM_REMEMBER_POSITION, 1);
+    }
+    else {
+      EEPROM.write(EEPROM_REMEMBER_POSITION, 0);
+    }
+  }  
+}
 
 
 // WATCHDOG TEST
