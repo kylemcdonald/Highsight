@@ -520,7 +520,7 @@ void oscEvent(OscMessage &m) {
 
 void oscGo(OscMessage &m) {
   // /go/motor0pos,motor1pos,motor2pos,motor3pos long ints
-  if (state != OK) return; 
+  if (state != OK || m.size() != 4) return; 
   
   double value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
@@ -529,7 +529,7 @@ void oscGo(OscMessage &m) {
 
 
 void oscGo2(OscMessage &m) {
-  if (state != OK) return;
+  if (state != OK || m.size() != 8) return;
   
   double pos = m.getFloat(MOTOR_ID*2);
   double spd = m.getFloat(MOTOR_ID*2+1);
@@ -640,8 +640,10 @@ void oscFreeRun(OscMessage &m) {
 
 // force calibration (one motor at a time only!)
 void oscSetPosition(OscMessage &m) {
-  if (m.getInt(0) == MOTOR_ID) {
+  if (m.size()==2 && m.getInt(0) == MOTOR_ID) {
     encoder0Pos = (long)m.getFloat(1);
+    homed = true;
+    if (state==NOTHOMED) state=OK;
   }
 }
 
