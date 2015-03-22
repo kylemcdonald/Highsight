@@ -36,7 +36,7 @@
 
 // PERSISTENT STORAGE locations
 const int EEPROM_MOTOR_ID = 0;
-const int EEPROM_REMEMBER_POSITION = 1; 
+const int EEPROM_REMEMBER_POSITION = 1;
 
 // IMPORTANT SETTINGS ----------------------------
 
@@ -524,7 +524,7 @@ void oscEvent(OscMessage &m) {
 
 void oscGo(OscMessage &m) {
   // /go/motor0pos,motor1pos,motor2pos,motor3pos long ints
-  if (state != OK || m.size() <= 4) return; 
+  if (state != OK || m.size() < 4) return; 
   
   double value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
@@ -533,7 +533,7 @@ void oscGo(OscMessage &m) {
 
 
 void oscGo2(OscMessage &m) {
-  if (state != OK || m.size() != 8) return;
+  if (state != OK || m.size() < 8) return;
   
   double pos = m.getFloat(MOTOR_ID*2);
   double spd = m.getFloat(MOTOR_ID*2+1);
