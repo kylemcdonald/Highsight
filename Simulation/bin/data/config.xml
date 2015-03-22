@@ -25,32 +25,32 @@
             <id>3</id>
             <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>465</cm>
-                <units>16021</units>
+                <cm>490</cm>
+                <units>14786</units>
             </refPoint>
         </nw>
         <ne>
             <id>0</id>
             <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>503</cm>
-                <units>13964</units>
+                <cm>491</cm>
+                <units>14711</units>
             </refPoint>
         </ne>
         <se>
             <id>1</id>
             <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>504</cm>
-                <units>14072</units>
+                <cm>476</cm>
+                <units>15307</units>
             </refPoint>
         </se>
         <sw>
             <id>2</id>
             <unitsPerCm>44.5</unitsPerCm>
             <refPoint>
-                <cm>472</cm>
-                <units>13943</units>
+                <cm>493</cm>
+                <units>13451</units>
             </refPoint>
         </sw>
     </motors>
