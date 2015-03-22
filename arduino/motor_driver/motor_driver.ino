@@ -524,7 +524,7 @@ void oscEvent(OscMessage &m) {
 
 void oscGo(OscMessage &m) {
   // /go/motor0pos,motor1pos,motor2pos,motor3pos long ints
-  if (state != OK || m.size() != 4) return; 
+  if (state != OK || m.size() <= 4) return; 
   
   double value = m.getFloat(MOTOR_ID);
   pidSetpoint = value;
