@@ -333,12 +333,16 @@ bool setupEncoder() {
   if (EEPROM.read(EEPROM_REMEMBER_POSITION) == 1) {
     // check if encoder value can be recovered after crash
     if (encoder0Pos ^ encoder0ChecksumKey == encoder0Checksum) {
-      // yes! let's claim we're homed
-      reboots++;
-      return true;
+      // sanity check
+      if (encoder0Pos > 10 && encoder0Pos < 100000) {
+        // yes! let's claim we're homed
+        reboots++;
+        return true;
+      }
     }
   }
 
+  encoder0Pos = -1;
   return false;
 }
 
