@@ -93,6 +93,7 @@ float MAX_SPEED = 30.0; // in approx cm/sec
 double goalSpeed = 0;
 float homingSpeed = 3.0;
 bool homed = false;
+int reboots = 0; // how many times has rebooted since last homing (only if using crash recovery)
 
 const int BACKOFF_STEPS = 200; // how many encoder steps to reverse out of endstop (so Zero is this far from the switch)
 
@@ -214,6 +215,7 @@ void loop(){
       pidSetpoint = encoder0Pos;
       state = OK;
       homed = true;
+      reboots = 0;
     }
   }
   
@@ -332,6 +334,7 @@ bool setupEncoder() {
     // check if encoder value can be recovered after crash
     if (encoder0Pos ^ encoder0ChecksumKey == encoder0Checksum) {
       // yes! let's claim we're homed
+      reboots++;
       return true;
     }
   }
@@ -489,6 +492,7 @@ void sendOscStatus(long stepper, long encoder) {
   msg.add(currentSpeed);
   msg.add(stepper);
   msg.add(encoder);
+  msg.add(reboots);
   
   etherOSC.send(msg, destination);
 }

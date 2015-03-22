@@ -195,6 +195,9 @@ Possible states:
 	string state	# see list above
 	float position	# in encoder steps
 	float velocity	# in approximate cm/sec
+	int stepper	# NO LONGER SUPPORTED - # of stepper steps since last status
+	int encoder	# NO LONGER SUPPORTED - # of encoder steps
+	int reboots	# if using crash recovery, how many times restarted and recovered encoder position since last real homing
 	
 
 	
