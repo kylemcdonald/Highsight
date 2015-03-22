@@ -505,13 +505,16 @@ void oscEvent(OscMessage &m) {
   m.plug("/resume", oscResume);
   
   m.plug("/statusinterval", oscSetStatusInterval);
-  m.plug("/serveraddress", oscSetServerAddress);
+  //m.plug("/serveraddress", oscSetServerAddress);
   
   m.plug("/motor", oscSetMotorPower);
   
-  m.plug("/freeruntest", oscFreeRun);
+  //m.plug("/freeruntest", oscFreeRun);
   
   m.plug("/crashtest", oscCrash);
+  
+  m.plug("/setposition", oscSetPosition);
+  m.plug("/rememberposition", oscRememberPosition);
 }
 
 
