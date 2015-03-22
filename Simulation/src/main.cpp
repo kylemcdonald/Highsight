@@ -30,8 +30,8 @@ const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - 
 
 //  safe zone when controlled by visitor - a stubby cylinder
 const float visitorFloor = 250; // cm
-const float visitorCeiling = 320; // cm
-const float visitorRadius = 220; // cm
+const float visitorCeiling = 290; // cm
+const float visitorRadius = 210; // cm
 
 enum LiveMode {
     LIVE_MODE_XY,
@@ -208,7 +208,7 @@ public:
         }
     }
     void moveSpeedChange(float& value) {
-        sendMotorsEachCommand("/maxspeed", moveSpeedCps);
+        sendMotorsEachCommand("/maxspeed", moveSpeedCps * 1.25);
     }
     void exit() {
         motorsStart = false;
@@ -239,7 +239,7 @@ public:
         }
         
         everythingOk = true;
-        for(int i = 0; i < 3; i++) {//TEMP FIX! ARGH!
+        for(int i = 0; i < 4; i++) {
             string& msg = motorsSorted[i]->status.statusMessage;
             // whitelist of non-problematic states
             if(!(msg == "OK" ||
@@ -301,11 +301,13 @@ public:
                                       eyePosition->y * visitorRadius / radial,
                                       eyePosition->z);
             }
+            /*
             int corner = 0;
             float angle = 45 + 90 * corner;
             eyePosition = eyePosition->getRotated(+angle, ofVec3f(0, 0, 1));
             eyePosition = ofVec3f(MAX(0, eyePosition->x), eyePosition->y, eyePosition->z);
             eyePosition = eyePosition->getRotated(-angle, ofVec3f(0, 0, 1));
+             */
         }
     }
     void updateMotors() {
