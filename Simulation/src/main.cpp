@@ -44,6 +44,7 @@ public:
     ofxOscReceiver oscMotorsReceive;
     Motor nw, ne, sw, se;
     vector<Motor*> motorsSorted;
+    float motorStatusTimeoutSeconds;
     ofEasyCam cam;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
@@ -74,6 +75,7 @@ public:
         
         maxSpeedCps = config.getFloatValue("motors/speed/max");
         refreshTimer.setPeriod(config.getFloatValue("motors/refreshPeriodSeconds"));
+        motorStatusTimeoutSeconds = config.getFloatValue("motors/statusTimeoutSeconds");
         
         nw.setup("nw", config, "motors/nw/");
         ne.setup("ne", config, "motors/ne/");
@@ -231,12 +233,15 @@ public:
         updateOculus();
     }
     void updateStatus() {
+        float curTime = ofGetElapsedTimef();
         while(oscMotorsReceive.hasWaitingMessages()) {
             ofxOscMessage msg;
             oscMotorsReceive.getNextMessage(&msg);
             if(msg.getAddress() == "/status") {
                 int motorId = msg.getArgAsInt32(0);
-                Motor::Status& status = motorsSorted[motorId]->status;
+                Motor& cur = *motorsSorted[motorId];
+                cur.lastMessageTime = curTime;
+                Motor::Status& status = cur.status;
                 status.statusMessage = msg.getArgAsString(1);
                 status.encoder0Pos = msg.getArgAsFloat(2);
                 status.currentSpeed = msg.getArgAsFloat(3);
@@ -245,12 +250,16 @@ public:
         
         everythingOk = true;
         for(int i = 0; i < 4; i++) {
-            string& msg = motorsSorted[i]->status.statusMessage;
+            Motor& cur = *motorsSorted[i];
+            string& msg = cur.status.statusMessage;
             // whitelist of non-problematic states
             if(!(msg == "OK" ||
                  msg == "HOMING" ||
                  msg == "HOMINGBACKOFF" ||
                  msg == "MOTOROFF")) {
+                everythingOk = false;
+            }
+            if(cur.lastMessageTime != 0 && curTime - cur.lastMessageTime > motorStatusTimeoutSeconds) {
                 everythingOk = false;
             }
         }

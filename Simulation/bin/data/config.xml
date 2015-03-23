@@ -9,6 +9,7 @@
     </carriage>
     <motors>
         <refreshPeriodSeconds>1</refreshPeriodSeconds>
+        <statusTimeoutSeconds>1</statusTimeoutSeconds>
         <geometry>
             <width>607</width> <!-- from west to east edge -->
             <depth>608</depth> <!-- from south to north edge -->

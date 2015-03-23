@@ -15,6 +15,7 @@ public:
         float encoder0Pos = 0;
         float currentSpeed = 0;
     } status;
+    float lastMessageTime = 0;
     
     ofVec3f eyeAttach, pillarAttach;
     float prevLength, lengthSpeedCps;
