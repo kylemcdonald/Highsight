@@ -12,12 +12,12 @@ int[] myLocalAddress = {192,168,2,100};
 
 String state = "ok";
 
-float STARTX = 0, STARTY = 0, STARTZ = 20;
+float STARTX = 0, STARTY = 0, STARTZ = 180;
 
 
 int NUM_MOTORS = 4;
 
-float HOMING_SPEED = 12.0;
+float HOMING_SPEED = 20.0;
 float STARTUP_MAX_SPEED = 15.0; // go slow to home position
 float MAX_SPEED = 50.0;  // approx cm/sec
 boolean max_speed_sent = false;
@@ -150,13 +150,13 @@ float stepsPerCM = 179 / 4.0;
 
 void setupWinches() {
   //NW                 motorID  pos in room             steps to rope length     support point 
-  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 14585, 532,     -7.6, 7.6, 0); // cm
+  winches[0] = new Winchbot(3,  -304.5, 303.5, 357,   stepsPerCM, 14786, 490,     -7.6, 7.6, 0); // cm
   //NE
-  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 14007, 499,      7.6, 7.6, 0);
+  winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 14711, 491,      7.6, 7.6, 0);
   //SE
-  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 13804, 506,      7.6, -7.6, 0);
+  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 15307, 476,      7.6, -7.6, 0);
   //SW
-  winches[3] = new Winchbot(2,   -304.5, -303.5, 357,  stepsPerCM, 12463, 533,     -7.6, -7.6, 0);
+  winches[3] = new Winchbot(2,   -304.5, -303.5, 357,  stepsPerCM, 13451, 493,     -7.6, -7.6, 0);
 }
 
 
@@ -215,6 +215,11 @@ void setup() {
   }
   oscP5.send(myMessage, myRemoteLocation);
   */
+  
+  // request crash recovery
+  myMessage = new OscMessage("/rememberposition");
+  myMessage.add(1);
+  oscP5.send(myMessage, myRemoteLocation);
   
   // slow down status reports
   myMessage = new OscMessage("/statusinterval");
@@ -354,7 +359,7 @@ void sendHome(int motorID) {
   
 }
 
-float x=0, y=0, z = 0;
+float x=STARTX, y=STARTY, z = STARTZ;
 void keyPressed() {
   switch (key) {
     case 'i': z += 3;
@@ -465,22 +470,12 @@ void oscEvent(OscMessage theOscMessage) {
     int steps = theOscMessage.get(4).intValue();
     int encs = theOscMessage.get(5).intValue();
 
+    int rebooted = -1;
     if (theOscMessage.arguments().length >= 7) {  
-      int serial = theOscMessage.get(6).intValue();
-      int skipped = serial - lastReceivedMessageNumber[motor];
-      lastReceivedMessageNumber[motor] = serial;
-    
-      if (skipped != 1) {
-        println("MOTOR " + motor + " serial skipped " + skipped);
-      }
+       rebooted = theOscMessage.get(6).intValue();
       
     }
     
-    
-    if (theOscMessage.arguments().length >= 8) {
-      int lostPackets = theOscMessage.get(8).intValue();
-      lostPacketLabels[motor].setText("lost "+lostPackets); 
-    }
 
     /*
     if (encs < steps || encs > steps * 8) {
@@ -492,10 +487,10 @@ void oscEvent(OscMessage theOscMessage) {
     statelabels[motor].setText(state);
     lastMessageTime[motor] = millis();
     
-    /*
-    println("Motor " + motor + " " + state + " pos " + pos + " and speed " + speed + " steps " 
-      + steps + " encs " + encs);
-    */
+    
+    println("Motor " + motor + " " + state + " pos " + pos + " and speed " + speed 
+      + " rebooted: " + rebooted);
+    
   }
   else if (addr.equals("/crashreport")) {
     int motor, address, data;

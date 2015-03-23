@@ -57,7 +57,7 @@
     <oculus>
         <lookAngle>
             <default>180</default>
-            <offset>90</offset>
+            <offset>135</offset>
         </lookAngle>
         <osc>
             <sendPort>9000</sendPort>
