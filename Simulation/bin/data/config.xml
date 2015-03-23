@@ -14,7 +14,7 @@
             <height>357</height> <!-- from floor to feed point -->
         </geometry>
         <speed> <!-- cm / s -->
-            <max>50</max>
+            <max>40</max>
         </speed>
         <osc>
             <host>192.168.2.255</host>
