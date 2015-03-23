@@ -245,6 +245,7 @@ public:
                 status.statusMessage = msg.getArgAsString(1);
                 status.encoder0Pos = msg.getArgAsFloat(2);
                 status.currentSpeed = msg.getArgAsFloat(3);
+                status.reboot = msg.getArgAsInt32(6);
             }
         }
         

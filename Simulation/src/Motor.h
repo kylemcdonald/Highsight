@@ -16,6 +16,7 @@ public:
         string statusMessage = "OK";
         float encoder0Pos = 0;
         float currentSpeed = 0;
+        bool reboot = false;
     } status;
     float lastMessageTime = 0;
     
@@ -62,6 +63,9 @@ public:
         string currentStatus = status.statusMessage;
         if(getTimeout()) {
             currentStatus = "TIMEOUT (" + ofToString((int) getTimeoutDuration()) + "s)";
+        }
+        if(reboot) {
+            currentStatus += " (rebooted)";
         }
         ofTranslate(pillarAttach);
         ofDrawBitmapString(name + " (" + ofToString(id) + ")\n"+
