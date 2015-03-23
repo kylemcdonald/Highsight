@@ -324,12 +324,6 @@ void pidSetMaxSpeed(float ms) {
 // setupEncoder will check if encoder position is retained in RAM after a crash
 // and return true if so
 bool setupEncoder() {
-  pinMode(encoder0PinA, INPUT); 
-  pinMode(encoder0PinB, INPUT); 
-  pinMode(encoder0PinZ, INPUT);
-  // encoder pin on interrupt 0 (pin 2)
-  attachInterrupt(0, doEncoderA, RISING);
-  
   if (EEPROM.read(EEPROM_REMEMBER_POSITION) == 1) {
     // check if encoder value can be recovered after crash
     if (encoder0Pos ^ encoder0ChecksumKey == encoder0Checksum) {
@@ -343,6 +337,13 @@ bool setupEncoder() {
   }
 
   encoder0Pos = -1;
+  
+  pinMode(encoder0PinA, INPUT); 
+  pinMode(encoder0PinB, INPUT); 
+  pinMode(encoder0PinZ, INPUT);
+  // encoder pin on interrupt 0 (pin 2)
+  attachInterrupt(0, doEncoderA, RISING);
+  
   return false;
 }
 
