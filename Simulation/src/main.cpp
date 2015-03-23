@@ -75,7 +75,7 @@ public:
         
         maxSpeedCps = config.getFloatValue("motors/speed/max");
         refreshTimer.setPeriod(config.getFloatValue("motors/refreshPeriodSeconds"));
-        motorStatusTimeoutSeconds = config.getFloatValue("motors/statusTimeoutSeconds");
+        Motor::statusTimeoutSeconds = config.getFloatValue("motors/statusTimeoutSeconds");
         
         nw.setup("nw", config, "motors/nw/");
         ne.setup("ne", config, "motors/ne/");
@@ -259,7 +259,7 @@ public:
                  msg == "MOTOROFF")) {
                 everythingOk = false;
             }
-            if(cur.lastMessageTime != 0 && curTime - cur.lastMessageTime > motorStatusTimeoutSeconds) {
+            if(cur.getTimeout()) {
                 everythingOk = false;
             }
         }

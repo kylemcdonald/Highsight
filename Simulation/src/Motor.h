@@ -4,6 +4,8 @@
 
 class Motor {
 public:
+    static float statusTimeoutSeconds;
+    
     string name;
     int id = 0;
     float unitsPerCm = 0;
@@ -41,6 +43,12 @@ public:
         floorDrop.z = 0;
         return floorDrop;
     }
+    float getTimeoutDuration() const {
+        return ofGetElapsedTimef() - lastMessageTime;
+    }
+    bool getTimeout() const {
+        return lastMessageTime != 0 && getTimeoutDuration() > statusTimeoutSeconds;
+    }
     void draw(ofVec3f eyePosition) {
         ofPushMatrix();
         ofPushStyle();
@@ -72,3 +80,5 @@ public:
         return cmToUnits(prevLength);
     }
 };
+
+float Motor::statusTimeoutSeconds = 0;
