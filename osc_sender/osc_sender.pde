@@ -154,7 +154,7 @@ void setupWinches() {
   //NE
   winches[1] = new Winchbot(0,  304.5, 303.5, 357,    stepsPerCM, 14711, 491,      7.6, 7.6, 0);
   //SE
-  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 15307, 476,      7.6, -7.6, 0);
+  winches[2] = new Winchbot(1,  304.5, -303.5, 357,   stepsPerCM, 14804, 482,      7.6, -7.6, 0);
   //SW
   winches[3] = new Winchbot(2,   -304.5, -303.5, 357,  stepsPerCM, 13451, 493,     -7.6, -7.6, 0);
 }
