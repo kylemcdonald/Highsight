@@ -50,6 +50,7 @@ public:
     float lookAngle, lookAngleDefault, lookAngleSpeedDps;
     float homeSpeedCps = 10, maxSpeedCps = 50;
     DelayTimer refreshTimer;
+    bool resetCompleted = false;
     unsigned long lastResetTime = 0;
     ofImage shadow;
     int liveMode;
@@ -150,6 +151,7 @@ public:
         }
     }
     void reset() {
+        resetCompleted = false;
         lastResetTime = ofGetElapsedTimeMillis();
         moveSpeedCps = homeSpeedCps;
         eyePosition = ofVec3f(0, 0, eyeStartHeight);
@@ -323,7 +325,7 @@ public:
         
         unsigned long curTime = ofGetElapsedTimeMillis();
         unsigned long curDuration = curTime - lastResetTime;
-        if(curDuration > resetWaitTime && moveSpeedCps < maxSpeedCps) {
+        if(curDuration > resetWaitTime && moveSpeedCps < maxSpeedCps && !resetCompleted) {
             bool ready = true;
             for(int i = 0; i < 4; i++) {
                 if(motorsSorted[i]->status.currentSpeed != 0) {
@@ -332,6 +334,7 @@ public:
             }
             if(ready) {
                 moveSpeedCps = maxSpeedCps;
+                resetCompleted = true;
             }
         }
         
