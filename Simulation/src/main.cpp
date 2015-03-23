@@ -244,7 +244,8 @@ public:
             // whitelist of non-problematic states
             if(!(msg == "OK" ||
                  msg == "HOMING" ||
-                 msg == "HOMINGBACKOFF")) {
+                 msg == "HOMINGBACKOFF" ||
+                 msg == "MOTOROFF")) {
                 everythingOk = false;
             }
         }
@@ -345,7 +346,12 @@ public:
     }
     void draw() {
         if(everythingOk) {
-            ofBackground(128);
+            if (!motorsPower) {
+                ofBackground(40);
+            }
+            else {
+                ofBackground(128);
+            }
         } else {
             ofBackground(128, 0, 0);
         }
