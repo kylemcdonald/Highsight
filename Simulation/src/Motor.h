@@ -59,11 +59,15 @@ public:
         float targetLengthUnits = cmToUnits(targetLengthCm);
         float curPositionUnits = status.encoder0Pos;
         float curPositionCm = unitsToCm(curPositionUnits);
+        string currentStatus = status.statusMessage;
+        if(getTimeout()) {
+            currentStatus = "TIMEOUT (" + ofToString((int) getTimeoutDuration()) + "s)";
+        }
         ofTranslate(pillarAttach);
         ofDrawBitmapString(name + " (" + ofToString(id) + ")\n"+
                            "target\n  position: ~" + ofToString(roundf(targetLengthCm)) + "cm / ~" + ofToString(roundf(targetLengthUnits)) + " units\n" +
                            "  speed: ~" + ofToString(roundf(lengthSpeedCps)) + "cm/s\n" +
-                           "current\n  status: " + status.statusMessage + "\n" +
+                           "current\n  status: " + currentStatus + "\n" +
                            "  position: ~" + ofToString(roundf(curPositionCm)) + " cm / ~" + ofToString(roundf(curPositionUnits)) + " units\n" +
                            "  speed: " + ofToString(status.currentSpeed) + " cm/s",
                            10, 20);
