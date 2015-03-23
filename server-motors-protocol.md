@@ -144,6 +144,7 @@ Set the time delay between status messages, in msec
 ```
 
 ### server IP address
+**DISABLED**
 Sets the destination IP address for /status messages
 
 ```
@@ -152,6 +153,25 @@ Sets the destination IP address for /status messages
 /serveraddress
 	int motorID
 	int, int, int, int
+```
+
+
+### enable attempt to remember position through a crash
+send 1 or 0 to enable or disable trying to recover the encoder position after crash
+```
+/rememberposition
+	int	// 1 for yes, 0 for no
+/rememberposition
+	int motorID
+	int	// 1 for yes, 0 for no
+```
+
+
+### force calibration by setting position and forcing homed state
+Send float to set new encoder position
+```
+/setposition
+	float	// new position
 ```
 
 
@@ -175,6 +195,9 @@ Possible states:
 	string state	# see list above
 	float position	# in encoder steps
 	float velocity	# in approximate cm/sec
+	int stepper	# NO LONGER SUPPORTED - # of stepper steps since last status
+	int encoder	# NO LONGER SUPPORTED - # of encoder steps
+	int reboots	# if using crash recovery, how many times restarted and recovered encoder position since last real homing
 	
 
 	

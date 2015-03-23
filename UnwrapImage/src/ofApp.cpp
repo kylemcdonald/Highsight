@@ -23,7 +23,7 @@ void ofApp::update() {
     fisheye.fov = fov;
     fisheye.radiusResolution = radiusResolution;
     fisheye.thetaResolution = thetaResolution;
-    fisheye.setup(img.getTexture());
+    fisheye.setup();
 }
 
 void ofApp::draw() {
@@ -51,7 +51,9 @@ void ofApp::draw() {
     cam.begin();
     ofEnableDepthTest();
     ofScale(100, 100, 100);
-    fisheye.draw(img.getTexture());
+    img.bind();
+    fisheye.draw();
+    img.unbind();
     ofDisableDepthTest();
     cam.end();
     

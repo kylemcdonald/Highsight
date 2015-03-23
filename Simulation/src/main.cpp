@@ -22,7 +22,6 @@ const float eyeStartHeight = 100;
 const float eyeWidth = 7.6, eyeDepth = 7.6, attachHeight = 0;
 const float minMouseDistance = 20;
 const float maxMouseDistance = 250;
-const float lookAngleSpeedDps = 90; // degrees / second
 
 const float eyePadding = 40;
 const float eyeHeightMin = 80, eyeHeightMax = height - eyePadding;
@@ -47,8 +46,8 @@ public:
     ofEasyCam cam;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
-    float lookAngle, lookAngleDefault;
-    float homeSpeedCps = 10, maxSpeedCps = 50; // cm / second
+    float lookAngle, lookAngleDefault, lookAngleSpeedDps;
+    float homeSpeedCps = 10, maxSpeedCps = 50;
     unsigned long lastResetTime = 0;
     ofImage shadow;
     int liveMode;
@@ -83,7 +82,8 @@ public:
         motorsSorted[sw.id] = &sw;
         
         lookAngleDefault = config.getFloatValue("oculus/lookAngle/default");
-        lookAngleOffset = config.getFloatValue("oculus/lookAngle/offset");
+        lookAngleOffset = config.getFloatValue("oculus/lookAngle/offset");;
+        lookAngleSpeedDps = config.getFloatValue("oculus/lookAngle/speed");
         
         oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
         oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
