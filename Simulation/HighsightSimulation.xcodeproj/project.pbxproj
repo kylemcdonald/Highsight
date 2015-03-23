@@ -156,6 +156,11 @@
 		27AA61561A9403D900C715AD /* NullLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NullLogger.h; sourceTree = "<group>"; };
 		27AA61571A9403D900C715AD /* ProgressHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProgressHandler.h; sourceTree = "<group>"; };
 		27AA61651A9403D900C715AD /* assimp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = assimp.a; sourceTree = "<group>"; };
+		27CE55EA1AC0B7B2001BD783 /* DelayTimer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DelayTimer.h; sourceTree = "<group>"; };
+		27CE55EB1AC0B7B2001BD783 /* FadeTimer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FadeTimer.h; sourceTree = "<group>"; };
+		27CE55EC1AC0B7B2001BD783 /* Hysteresis.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hysteresis.h; sourceTree = "<group>"; };
+		27CE55ED1AC0B7B2001BD783 /* ofxTiming.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxTiming.h; sourceTree = "<group>"; };
+		27CE55EE1AC0B7B2001BD783 /* RateTimer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RateTimer.h; sourceTree = "<group>"; };
 		27FC76E81A9BA178005A6002 /* ofxOsc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxOsc.h; sourceTree = "<group>"; };
 		27FC76E91A9BA178005A6002 /* ofxOscArg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxOscArg.h; sourceTree = "<group>"; };
 		27FC76EA1A9BA178005A6002 /* ofxOscBundle.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxOscBundle.cpp; sourceTree = "<group>"; };
@@ -409,6 +414,27 @@
 			path = osx;
 			sourceTree = "<group>";
 		};
+		27CE55E81AC0B7B2001BD783 /* ofxTiming */ = {
+			isa = PBXGroup;
+			children = (
+				27CE55E91AC0B7B2001BD783 /* src */,
+			);
+			name = ofxTiming;
+			sourceTree = "<group>";
+		};
+		27CE55E91AC0B7B2001BD783 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				27CE55EA1AC0B7B2001BD783 /* DelayTimer.h */,
+				27CE55EB1AC0B7B2001BD783 /* FadeTimer.h */,
+				27CE55EC1AC0B7B2001BD783 /* Hysteresis.h */,
+				27CE55ED1AC0B7B2001BD783 /* ofxTiming.h */,
+				27CE55EE1AC0B7B2001BD783 /* RateTimer.h */,
+			);
+			name = src;
+			path = ../../../addons/ofxTiming/src;
+			sourceTree = "<group>";
+		};
 		27FC76E61A9BA178005A6002 /* ofxOsc */ = {
 			isa = PBXGroup;
 			children = (
@@ -509,6 +535,7 @@
 		BB4B014C10F69532006C3DED /* addons */ = {
 			isa = PBXGroup;
 			children = (
+				27CE55E81AC0B7B2001BD783 /* ofxTiming */,
 				276FDFF51AAF9F1000FD3F2A /* ofxGui */,
 				276FDFEE1AAF9D5F00FD3F2A /* ofxConnexion */,
 				27FC76E61A9BA178005A6002 /* ofxOsc */,

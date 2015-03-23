@@ -12,6 +12,7 @@
 #include "ofxOsc.h"
 #include "ofxConnexion.h"
 #include "ofxGui.h"
+#include "ofxTiming.h"
 
 #include "Motor.h"
 
@@ -48,6 +49,7 @@ public:
     ofVec3f moveVecCps;
     float lookAngle, lookAngleDefault, lookAngleSpeedDps;
     float homeSpeedCps = 10, maxSpeedCps = 50;
+    DelayTimer refreshTimer;
     unsigned long lastResetTime = 0;
     ofImage shadow;
     int liveMode;
@@ -70,6 +72,7 @@ public:
         }
         
         maxSpeedCps = config.getFloatValue("motors/speed/max");
+        refreshTimer.setPeriod(config.getFloatValue("motors/refreshPeriodSeconds"));
         
         nw.setup("nw", config, "motors/nw/");
         ne.setup("ne", config, "motors/ne/");
@@ -303,6 +306,7 @@ public:
                                       eyePosition->z);
             }
             /*
+             // make it a triangle!
             int corner = 0;
             float angle = 45 + 90 * corner;
             eyePosition = eyePosition->getRotated(+angle, ofVec3f(0, 0, 1));
@@ -329,6 +333,10 @@ public:
             if(ready) {
                 moveSpeedCps = maxSpeedCps;
             }
+        }
+        
+        if(refreshTimer.tick()) {
+            moveSpeedCps = moveSpeedCps;
         }
         
         ofxOscMessage motors;

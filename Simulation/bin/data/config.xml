@@ -8,6 +8,7 @@
         <startHeight>0</startHeight>
     </carriage>
     <motors>
+        <refreshPeriodSeconds>1</refreshPeriodSeconds>
         <geometry>
             <width>607</width> <!-- from west to east edge -->
             <depth>608</depth> <!-- from south to north edge -->
