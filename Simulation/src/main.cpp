@@ -247,6 +247,15 @@ public:
                 status.currentSpeed = msg.getArgAsFloat(3);
                 status.reboot = msg.getArgAsInt32(6);
             }
+            if(msg.getAddress() == "/crashreport") {
+                ofFile file;
+                file.open("crashreport.log", ofFile::WriteOnly);
+                file << ofGetTimestampString() <<
+                    "\t" << msg.getRemoteIp();
+                for(int i = 0; i < msg.getNumArgs(); i++) {
+                    file << "\t" << msg.getArgAsString(i);
+                }
+            }
         }
         
         everythingOk = true;
