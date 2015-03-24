@@ -498,7 +498,8 @@ void sendOscStatus(long stepper, long encoder) {
   msg.add(currentSpeed);
   msg.add(stepper);
   msg.add(encoder);
-  msg.add(reboots);
+  int seconds_since_reboot = millis() / 1000;
+  msg.add(reboots ? seconds_since_reboot : 0);
   
   etherOSC.send(msg, destination);
 }

@@ -197,7 +197,7 @@ Possible states:
 	float velocity	# in approximate cm/sec
 	int stepper	# NO LONGER SUPPORTED - # of stepper steps since last status
 	int encoder	# NO LONGER SUPPORTED - # of encoder steps
-	int rebooted	# if using crash recovery, whether have restarted and recovered encoder position since last real homing
+	int secondsSinceReboot	# if using crash recovery and arduino has crashed since last homing, number of seconds since last crash.
 	
 
 	
