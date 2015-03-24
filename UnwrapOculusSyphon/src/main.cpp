@@ -103,9 +103,6 @@ public:
         if(key == 'd') {
             debug = !debug;
         }
-		if(key == 'f') {
-			ofToggleFullscreen();
-		}
 	}
 };
 
