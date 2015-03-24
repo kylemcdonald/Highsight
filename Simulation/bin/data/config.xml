@@ -59,11 +59,15 @@
     <oculus>
         <lookAngle>
             <default>180</default>
-            <offset>135</offset>
+            <offset>155</offset>
             <speed>90</speed> <!-- degrees per second -->
         </lookAngle>
         <osc>
             <sendPort>9000</sendPort>
         </osc>
     </oculus>
+    <interaction>
+        <interactionTimeoutEnabled>1</interactionTimeoutEnabled> <!-- 1 or 0 to enable/disable interaction timeout -->
+        <interactionTimeoutSeconds>20</interactionTimeoutSeconds>
+    </interaction>
 </xml>
