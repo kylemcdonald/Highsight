@@ -19,10 +19,12 @@
 const float resetWaitTime = 2000;
 
 const float width = 607, depth = 608, height = 357;
-const float eyeStartHeight = 100;
+const float eyeStartHeight = 275;
 const float eyeWidth = 7.6, eyeDepth = 7.6, attachHeight = 0;
 const float minMouseDistance = 20;
 const float maxMouseDistance = 250;
+
+const ofVec3f eyeHomePosition = ofVec3f(0, 0, eyeStartHeight);
 
 const float eyePadding = 40;
 const float eyeHeightMin = 80, eyeHeightMax = height - eyePadding;
@@ -57,10 +59,15 @@ public:
     int liveMode;
     bool live = false;
     
+    // interaction timeout
+    float lastInteractionTime = ofGetElapsedTimef();
+    float interactionTimeoutSeconds;
+    bool interactionTimedOut;
+    
     ofxConnexion connexion;
     
     ofxPanel gui;
-    ofParameter<bool> everythingOk, lockLookAngle, visitorMode, motorsStart, motorsPower;
+    ofParameter<bool> everythingOk, lockLookAngle, visitorMode, motorsStart, motorsPower, interactionTimeoutEnabled;
     ofParameter<float> lookAngleOffset, moveSpeedCps;
     ofParameter<ofVec3f> eyePosition, connexionPosition, connexionRotation;
     ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn, visitorModeBtn;
@@ -76,6 +83,9 @@ public:
         maxSpeedCps = config.getFloatValue("motors/speed/max");
         refreshTimer.setPeriod(config.getFloatValue("motors/refreshPeriodSeconds"));
         Motor::statusTimeoutSeconds = config.getFloatValue("motors/statusTimeoutSeconds");
+        
+        interactionTimeoutEnabled = config.getIntValue("interaction/interactionTimeoutEnabled") == 1;
+        interactionTimeoutSeconds = config.getFloatValue("interaction/interactionTimeoutSeconds");
         
         nw.setup("nw", config, "motors/nw/");
         ne.setup("ne", config, "motors/ne/");
@@ -115,6 +125,7 @@ public:
         gui.setup();
         gui.add(everythingOk.set("Everything OK", true));
         gui.add(visitorMode.set("Visitor mode", true));
+        gui.add(interactionTimeoutEnabled.set("Interact timeout", true));
         gui.add(toggleFullscreenBtn.setup("Toggle fullscreen"));
         toggleFullscreenBtn.addListener(this, &ofApp::toggleFullscreen);
         gui.add(resetBtn.setup("Reset everything"));
@@ -138,7 +149,7 @@ public:
                                       ofVec3f(-1, -1, -1),
                                       ofVec3f(+1, +1, +1)));
         gui.add(eyePosition.set("Eye position",
-                                ofVec3f(0, 0, eyeStartHeight),
+                                eyeHomePosition,
                                 ofVec3f(-eyeWidthMax, -eyeDepthMax, eyeHeightMin),
                                 ofVec3f(+eyeWidthMax, +eyeDepthMax, eyeHeightMax)));
         setupMovement();
@@ -156,7 +167,7 @@ public:
         resetCompleted = false;
         lastResetTime = ofGetElapsedTimeMillis();
         moveSpeedCps = homeSpeedCps;
-        eyePosition = ofVec3f(0, 0, eyeStartHeight);
+        eyePosition = eyeHomePosition;
         resetLookAngle();
     }
     void resetLookAngle() {
@@ -185,6 +196,7 @@ public:
         if (npos.length() > movementThreshold ||
             nrot.length() > movementThreshold) {
             setupMovement();
+            lastInteractionTime = ofGetElapsedTimef();
         }
     }
     void sendMotorsAllCommand(string address) {
@@ -294,12 +306,30 @@ public:
                 moveVecCps.z = moveVecCps.y;
                 moveVecCps.y = 0;
             }
+            lastInteractionTime = ofGetElapsedTimef();
         }
     }
     void updateEye() {
-        ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
-        moveVecFps.rotate(lookAngle, ofVec3f(0, 0, 1));
-        eyePosition += moveVecFps;
+        if (visitorMode && interactionTimeoutEnabled && interactionTimedOut) {
+            // when timed out, go towards home position and then turn off motors
+            ofVec3f theWayHome = eyeHomePosition - eyePosition;
+            // don't have to be exactly home, just close to center so it doesn't sag much when power goes off
+            float closeEnough = 50;
+            if (abs(theWayHome.x) < closeEnough && abs(theWayHome.y) < closeEnough && abs(theWayHome.z) < closeEnough) {
+                motorsPower = false;
+                ofLog() << "timeout poweroff";
+            }
+            else {
+                ofLog() << theWayHome.x<< " " << theWayHome.y << " " << theWayHome.z;
+                ofVec3f moveVecFps = theWayHome.getNormalized() * moveSpeedCps * 0.75 / ofGetTargetFrameRate();
+                eyePosition += moveVecFps;
+            }
+        }
+        else {
+            ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
+            moveVecFps.rotate(lookAngle, ofVec3f(0, 0, 1));
+            eyePosition += moveVecFps;
+        }
         
         // hard limits on eye position
         eyePosition = ofVec3f(ofClamp(eyePosition->x, -eyeWidthMax, +eyeWidthMax),
@@ -366,6 +396,8 @@ public:
         oscOculusSend.sendMessage(oculus);
     }
     void draw() {
+        interactionTimedOut = (ofGetElapsedTimef() - lastInteractionTime > interactionTimeoutSeconds);
+        
         if(everythingOk) {
             if (!motorsPower) {
                 ofBackground(40);
