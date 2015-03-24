@@ -60,7 +60,7 @@ public:
     bool live = false;
     
     // interaction timeout
-    float lastInteractionTime = ofGetElapsedTimef();
+    float lastInteractionTime = 0;
     float interactionTimeoutSeconds;
     bool interactionTimedOut;
     
@@ -84,8 +84,8 @@ public:
         refreshTimer.setPeriod(config.getFloatValue("motors/refreshPeriodSeconds"));
         Motor::statusTimeoutSeconds = config.getFloatValue("motors/statusTimeoutSeconds");
         
-        interactionTimeoutEnabled = config.getIntValue("interaction/interactionTimeoutEnabled") == 1;
-        interactionTimeoutSeconds = config.getFloatValue("interaction/interactionTimeoutSeconds");
+        interactionTimeoutEnabled = config.getBoolValue("interaction/timeout/enabled");
+        interactionTimeoutSeconds = config.getFloatValue("interaction/timeout/seconds");
         
         nw.setup("nw", config, "motors/nw/");
         ne.setup("ne", config, "motors/ne/");
@@ -152,10 +152,10 @@ public:
                                 eyeHomePosition,
                                 ofVec3f(-eyeWidthMax, -eyeDepthMax, eyeHeightMin),
                                 ofVec3f(+eyeWidthMax, +eyeDepthMax, eyeHeightMax)));
-        setupMovement();
+        requireMovement();
         reset();
     }
-    void setupMovement() {
+    void requireMovement() {
         if(!motorsPower) {
             motorsPower = true;
         }
@@ -195,7 +195,6 @@ public:
         float movementThreshold = 0.05;
         if (npos.length() > movementThreshold ||
             nrot.length() > movementThreshold) {
-            setupMovement();
             lastInteractionTime = ofGetElapsedTimef();
         }
     }
@@ -319,20 +318,22 @@ public:
         }
     }
     void updateEye() {
+        interactionTimedOut = (ofGetElapsedTimef() - lastInteractionTime > interactionTimeoutSeconds);
+        if(!interactionTimedOut) {
+            requireMovement();
+        }
         if (visitorMode && interactionTimeoutEnabled && interactionTimedOut) {
             // when timed out, go towards home position and then turn off motors
             ofVec3f theWayHome = eyeHomePosition - eyePosition;
             // don't have to be exactly home, just close to center so it doesn't sag much when power goes off
             float closeEnough = 50;
-            if (abs(theWayHome.x) < closeEnough && abs(theWayHome.y) < closeEnough && abs(theWayHome.z) < closeEnough) {
+            if (theWayHome.length() < closeEnough) {
                 motorsPower = false;
-            }
-            else {
+            } else {
                 ofVec3f moveVecFps = theWayHome.getNormalized() * moveSpeedCps * 0.75 / ofGetTargetFrameRate();
                 eyePosition += moveVecFps;
             }
-        }
-        else {
+        } else {
             ofVec3f moveVecFps = moveVecCps / ofGetTargetFrameRate();
             moveVecFps.rotate(lookAngle, ofVec3f(0, 0, 1));
             eyePosition += moveVecFps;
@@ -403,8 +404,6 @@ public:
         oscOculusSend.sendMessage(oculus);
     }
     void draw() {
-        interactionTimedOut = (ofGetElapsedTimef() - lastInteractionTime > interactionTimeoutSeconds);
-        
         if(everythingOk) {
             if (!motorsPower) {
                 ofBackground(40);

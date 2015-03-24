@@ -67,7 +67,9 @@
         </osc>
     </oculus>
     <interaction>
-        <interactionTimeoutEnabled>1</interactionTimeoutEnabled> <!-- 1 or 0 to enable/disable interaction timeout -->
-        <interactionTimeoutSeconds>20</interactionTimeoutSeconds>
+        <timeout>
+            <enabled>1</enabled>
+            <seconds>20</seconds>
+        </timeout>
     </interaction>
 </xml>
