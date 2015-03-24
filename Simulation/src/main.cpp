@@ -326,10 +326,8 @@ public:
             float closeEnough = 50;
             if (abs(theWayHome.x) < closeEnough && abs(theWayHome.y) < closeEnough && abs(theWayHome.z) < closeEnough) {
                 motorsPower = false;
-                ofLog() << "timeout poweroff";
             }
             else {
-                ofLog() << theWayHome.x<< " " << theWayHome.y << " " << theWayHome.z;
                 ofVec3f moveVecFps = theWayHome.getNormalized() * moveSpeedCps * 0.75 / ofGetTargetFrameRate();
                 eyePosition += moveVecFps;
             }
