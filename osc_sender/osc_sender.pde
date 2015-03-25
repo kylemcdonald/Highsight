@@ -218,7 +218,7 @@ void setup() {
   
   // request crash recovery
   myMessage = new OscMessage("/rememberposition");
-  myMessage.add(1);
+  myMessage.add(0);
   oscP5.send(myMessage, myRemoteLocation);
   
   // slow down status reports
