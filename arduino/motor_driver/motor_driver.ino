@@ -325,6 +325,8 @@ void pidSetMaxSpeed(float ms) {
 // setupEncoder will check if encoder position is retained in RAM after a crash
 // and return true if so
 bool setupEncoder() {
+  bool recovered = false;
+  
   if (EEPROM.read(EEPROM_REMEMBER_POSITION) == 1) {
     // check if encoder value can be recovered after crash
     if (encoder0Pos ^ encoder0ChecksumKey == encoder0Checksum) {
@@ -332,7 +334,7 @@ bool setupEncoder() {
       if (encoder0Pos > 10 && encoder0Pos < 100000) {
         // yes! let's claim we're homed
         reboots++;
-        return true;
+        recovered = true;
       }
     }
   }
@@ -345,7 +347,7 @@ bool setupEncoder() {
   // encoder pin on interrupt 0 (pin 2)
   attachInterrupt(0, doEncoderA, RISING);
   
-  return false;
+  return recovered;
 }
 
 void setupMotorDriver(bool poweron) {
