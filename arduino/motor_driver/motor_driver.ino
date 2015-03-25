@@ -338,7 +338,7 @@ bool setupEncoder() {
     }
   }
 
-  encoder0Pos = -1;
+  if (!recovered) encoder0Pos = -1;
   
   pinMode(encoder0PinA, INPUT); 
   pinMode(encoder0PinB, INPUT); 
