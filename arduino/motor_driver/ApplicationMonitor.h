@@ -12,7 +12,7 @@
 // David Bouchard's arduino-osc library
 // http://www.deadpixel.ca/arduino-osc/
 // https://github.com/davidbouchard/arduino-osc
-#include <OscUDP.h>
+#include <OSCMessage.h>
 
 namespace Watchdog
 {
@@ -59,7 +59,7 @@ namespace Watchdog
   public:
     CApplicationMonitor(int nBaseAddress = 500, int nMaxEntries = DEFAULT_ENTRIES);
     void Dump(Print &rDestination, bool bOnlyIfPresent = true) const;
-    void Dump(OscMessage &msg, bool bOnlyIfPresent = true) const;
+    void Dump(OSCMessage &msg, bool bOnlyIfPresent = true) const;
 
     enum ETimeout
     {

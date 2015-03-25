@@ -15,10 +15,10 @@
 #include <PID_v1.h>
 
 
-// David Bouchard's arduino-osc library
-// http://www.deadpixel.ca/arduino-osc/
-// https://github.com/davidbouchard/arduino-osc
-#include <OscUDP.h>
+// CNMAT OSC library
+// https://github.com/CNMAT/OSC
+#include <OSCMessage.h>
+#include <OSCBundle.h>
 
 // Watchdog Timer and crash reports derived from ArduinoCrashMonitor by MegunoLink
 // https://github.com/Megunolink/ArduinoCrashMonitor
@@ -116,13 +116,11 @@ IPAddress listeningIP(192,168,LOCALNET,42+MOTOR_ID); // you need to set this
 
 unsigned int listeningPort = 12001;      // local port to listen on
 
-NetAddress destination;
 //IPAddress destinationIP( 255,255,255,255 ); // 255... is broadcast address according to http://forum.arduino.cc/index.php?topic=164119.0
 IPAddress destinationIP( 192,168,LOCALNET,255 ); // this is broadcast address when using osx internet sharing, according to ifconfig listing for bridge100
 int destinationPort = 12000;
 
 EthernetUDP UDP;
-OscUDP etherOSC;  
 
 int MSEC_PER_STATUS = 50; // millseconds between sending status messages
 
@@ -267,7 +265,7 @@ void loop(){
   
   
   // check for incoming messages 
-  etherOSC.listen();
+  checkOsc();
   
   
   // send updates 
@@ -293,11 +291,15 @@ void loop(){
 
 
 void setupWatchdog() {
-  OscMessage msg("/crashreport");
+  OSCMessage msg("/crashreport");
   msg.add(MOTOR_ID);
   ApplicationMonitor.Dump(msg);
   ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_4s);
-  etherOSC.send(msg, destination);
+  
+  UDP.beginPacket(destinationIP, destinationPort);
+  msg.send(UDP);
+  UDP.endPacket();
+  msg.empty();
 }
 
 
@@ -305,9 +307,6 @@ void setupWatchdog() {
 void setupEthernet() {
   Ethernet.begin(mac,listeningIP);
   UDP.begin(listeningPort);
-  etherOSC.begin(UDP);
-  
-  destination.set(destinationIP, destinationPort);
 }
 
 
@@ -457,7 +456,7 @@ void doEncoderA() {
 // send status message
 
 void sendOscStatus(long stepper, long encoder) {
-  OscMessage msg("/status");
+  OSCMessage msg("/status");
  
   msg.add(MOTOR_ID);
   
@@ -503,35 +502,53 @@ void sendOscStatus(long stepper, long encoder) {
   int seconds_since_reboot = millis() / 1000;
   msg.add(reboots ? seconds_since_reboot : 0);
   
-  etherOSC.send(msg, destination);
-}
-
-void oscEvent(OscMessage &m) { 
-  m.plug("/go", oscGo); 
-  m.plug("/go2", oscGo2);
-  m.plug("/home", oscHome);
-  m.plug("/maxspeed", oscSetMaxSpeed); 
-  m.plug("/maxaccel", oscSetMaxAccel);
-  m.plug("/deadzone", oscSetDeadZone);
-  
-  m.plug("/stop", oscStop);
-  m.plug("/resume", oscResume);
-  
-  m.plug("/statusinterval", oscSetStatusInterval);
-  //m.plug("/serveraddress", oscSetServerAddress);
-  
-  m.plug("/motor", oscSetMotorPower);
-  
-  //m.plug("/freeruntest", oscFreeRun);
-  
-  m.plug("/crashtest", oscCrash);
-  
-  m.plug("/setposition", oscSetPosition);
-  m.plug("/rememberposition", oscRememberPosition);
+  UDP.beginPacket(destinationIP, destinationPort);
+  msg.send(UDP);
+  UDP.endPacket();
+  msg.empty();
 }
 
 
-void oscGo(OscMessage &m) {
+void checkOsc() {
+  OSCMessage oscMsg;
+  int s;
+   
+  //receive a bundle
+  if ((s = UDP.parsePacket())>0) {
+    while (s--) {
+      oscMsg.fill(UDP.read());
+    }
+    
+    if (!oscMsg.hasError()) {
+      oscMsg.dispatch("/go", oscGo); 
+      oscMsg.dispatch("/go2", oscGo2);
+      oscMsg.dispatch("/home", oscHome);
+      oscMsg.dispatch("/maxspeed", oscSetMaxSpeed); 
+      oscMsg.dispatch("/maxaccel", oscSetMaxAccel);
+      oscMsg.dispatch("/deadzone", oscSetDeadZone);
+      
+      oscMsg.dispatch("/stop", oscStop);
+      oscMsg.dispatch("/resume", oscResume);
+      
+      oscMsg.dispatch("/statusinterval", oscSetStatusInterval);
+      //oscMsg.dispatch("/serveraddress", oscSetServerAddress);
+      
+      oscMsg.dispatch("/motor", oscSetMotorPower);
+      
+      //oscMsg.dispatch("/freeruntest", oscFreeRun);
+      
+      oscMsg.dispatch("/crashtest", oscCrash);
+      
+      oscMsg.dispatch("/setposition", oscSetPosition);
+      oscMsg.dispatch("/rememberposition", oscRememberPosition);      
+    }
+    else {
+      // bad bundle!
+    }
+  }
+}
+
+void oscGo(OSCMessage &m) {
   // /go/motor0pos,motor1pos,motor2pos,motor3pos long ints
   if (state != OK || m.size() < 4) return; 
   
@@ -541,7 +558,7 @@ void oscGo(OscMessage &m) {
 }
 
 
-void oscGo2(OscMessage &m) {
+void oscGo2(OSCMessage &m) {
   if (state != OK || m.size() < 8) return;
   
   double pos = m.getFloat(MOTOR_ID*2);
@@ -552,7 +569,7 @@ void oscGo2(OscMessage &m) {
 
 
 
-void oscHome(OscMessage &m) {
+void oscHome(OSCMessage &m) {
   if (state==MOTOROFF) return;
   
   int motor = m.getInt(0);
@@ -562,7 +579,7 @@ void oscHome(OscMessage &m) {
   }
 }
 
-void oscSetMaxSpeed(OscMessage &m) {
+void oscSetMaxSpeed(OSCMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     MAX_SPEED = m.getFloat(m.size()-1);
     pidSetMaxSpeed(MAX_SPEED);
@@ -570,14 +587,14 @@ void oscSetMaxSpeed(OscMessage &m) {
 }
 
 
-void oscSetMaxAccel(OscMessage &m) {
+void oscSetMaxAccel(OSCMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     MAX_ACCEL = m.getFloat(m.size()-1);
   }
 }
 
 // /deadzone [motorID] stillDeadZone movingDeadZone
-void oscSetDeadZone(OscMessage &m) {
+void oscSetDeadZone(OSCMessage &m) {
   if (m.size()==2 || (m.size()==3 && m.getInt(0)==MOTOR_ID)) {
     STILL_DEAD_ZONE = m.getInt(m.size()-2);
     MOVING_DEAD_ZONE = m.getInt(m.size()-1);
@@ -585,7 +602,7 @@ void oscSetDeadZone(OscMessage &m) {
 }
 
 
-void oscSetStatusInterval(OscMessage &m) {
+void oscSetStatusInterval(OSCMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     int msec = m.getInt(m.size()-1);
     if (msec<3 || msec>500) return;
@@ -594,11 +611,10 @@ void oscSetStatusInterval(OscMessage &m) {
 }
 
 // serveraddress int,int,int,int to make the IP address
-void oscSetServerAddress(OscMessage &m) {
+void oscSetServerAddress(OSCMessage &m) {
   if (m.size()==4 || (m.size()==5 && m.getInt(0)==MOTOR_ID)) {
     for (int i=0; i<4; i++) {
       destinationIP[i] = m.getInt(m.size()-4+i);
-      destination.set(destinationIP, destinationPort);
     }
   }  
 }
@@ -606,7 +622,7 @@ void oscSetServerAddress(OscMessage &m) {
 
 
 // STOP: 
-void oscStop(OscMessage &m) {
+void oscStop(OSCMessage &m) {
   if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
     if (state==OK || state==FREERUNTEST) state = STOPPED;
     else if (state==HOMING || state==HOMINGBACKOFF) state = NOTHOMED;
@@ -615,7 +631,7 @@ void oscStop(OscMessage &m) {
 }
 
 // RESUME: 
-void oscResume(OscMessage &m) {
+void oscResume(OSCMessage &m) {
   if (m.size()==0 || (m.size()==1 && m.getInt(0)==MOTOR_ID)) {
     if (state==STOPPED || state==FREERUNTEST) state = OK; 
   }
@@ -623,7 +639,7 @@ void oscResume(OscMessage &m) {
 
 
 // MOTOR POWER:
-void oscSetMotorPower(OscMessage &m) {
+void oscSetMotorPower(OSCMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     int p = m.getInt(m.size()-1);
     if (p) {
@@ -642,7 +658,7 @@ void oscSetMotorPower(OscMessage &m) {
 
 
 // FREERUN TEST (one motor at a time only!)
-void oscFreeRun(OscMessage &m) {
+void oscFreeRun(OSCMessage &m) {
   if (homed && m.getInt(0) == MOTOR_ID) {
     state = FREERUNTEST;
     freeruncenter = m.getFloat(1);
@@ -652,7 +668,7 @@ void oscFreeRun(OscMessage &m) {
 
 
 // force calibration (one motor at a time only!)
-void oscSetPosition(OscMessage &m) {
+void oscSetPosition(OSCMessage &m) {
   if (m.size()==2 && m.getInt(0) == MOTOR_ID) {
     encoder0Pos = (long)m.getFloat(1);
     homed = true;
@@ -662,7 +678,7 @@ void oscSetPosition(OscMessage &m) {
 
 
 // preferences: try to remember encoder value through a crash
-void oscRememberPosition(OscMessage &m) {
+void oscRememberPosition(OSCMessage &m) {
   if (m.size()==1 || (m.size()==2 && m.getInt(0)==MOTOR_ID)) {
     int p = m.getInt(m.size()-1);
     if (p) {
@@ -676,7 +692,7 @@ void oscRememberPosition(OscMessage &m) {
 
 
 // WATCHDOG TEST
-void oscCrash(OscMessage &m) {
+void oscCrash(OSCMessage &m) {
   delay(5000); // watchdog timer is 4 seconds so 5 second delay should trigger it
 }
 
