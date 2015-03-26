@@ -3,12 +3,10 @@
 // add homing function
 // quadlaterate on startup
 // load all config via json/xml
-// add screenshot trigger
 // move osc output to threaded loop (not graphics loop)
 
 #include "ofMain.h"
-
-#include "ofxAssimpModelLoader.h"
+#include "ofxSyphon.h"
 #include "ofxOsc.h"
 #include "ofxConnexion.h"
 #include "ofxGui.h"
@@ -31,7 +29,7 @@ const float eyeHeightMin = 80, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
 //  safe zone when controlled by visitor - a stubby cylinder
-const float visitorFloor = 270; // cm
+const float visitorFloor = 200; // cm
 const float visitorCeiling = 290; // cm
 const float visitorRadius = 210; // cm
 
@@ -42,6 +40,11 @@ enum LiveMode {
 
 class ofApp : public ofBaseApp {
 public:
+    ofFile connexionLog, positionLog;
+    ofVec3f lastEyePosition;
+    DelayTimer connexionLogTimer, positionLogTimer;
+    
+    ofxSyphonClient syphonCam;
     ofxOscSender oscMotorsSend, oscOculusSend;
     ofxOscReceiver oscMotorsReceive;
     Motor nw, ne, sw, se;
@@ -100,6 +103,14 @@ public:
         lookAngleDefault = config.getFloatValue("oculus/lookAngle/default");
         lookAngleOffset = config.getFloatValue("oculus/lookAngle/offset");;
         lookAngleSpeedDps = config.getFloatValue("oculus/lookAngle/speed");
+        
+        syphonCam.setup();
+        syphonCam.set("","Black Syphon");
+        
+        positionLog.open("position.log", ofFile::WriteOnly);
+        connexionLog.open("connexion.log", ofFile::WriteOnly);
+        positionLogTimer.setPeriod(1);
+        connexionLogTimer.setPeriod(1);
         
         oscOculusSend.setup("localhost", config.getIntValue("oculus/osc/sendPort"));
         oscMotorsSend.setup(config.getValue("motors/osc/host"), config.getIntValue("motors/osc/sendPort"));
@@ -177,7 +188,7 @@ public:
         ofToggleFullscreen();
     }
     void connexionData(ConnexionData& data) {
-        if(data.getButton(0) || data.getButton(1)) {
+        if(data.getButton(0) && data.getButton(1)) {
             ofxOscMessage msg;
             msg.setAddress("/save");
             oscOculusSend.sendMessage(msg);
@@ -196,6 +207,17 @@ public:
         if (npos.length() > movementThreshold ||
             nrot.length() > movementThreshold) {
             lastInteractionTime = ofGetElapsedTimef();
+            
+            if(connexionLogTimer.tick()) {
+                connexionLog << ofGetTimestampString()
+                    << "\t" << npos.x
+                    << "\t" << npos.y
+                    << "\t" << npos.z
+                    << "\t" << nrot.x
+                    << "\t" << nrot.y
+                    << "\t" << nrot.z
+                    << "\n";
+            }
         }
     }
     void sendMotorsAllCommand(string address) {
@@ -355,14 +377,30 @@ public:
                                       eyePosition->y * visitorRadius / radial,
                                       eyePosition->z);
             }
+            
             /*
              // make it a triangle!
-            int corner = 0;
+            int corner = 2;
             float angle = 45 + 90 * corner;
             eyePosition = eyePosition->getRotated(+angle, ofVec3f(0, 0, 1));
             eyePosition = ofVec3f(MAX(0, eyePosition->x), eyePosition->y, eyePosition->z);
             eyePosition = eyePosition->getRotated(-angle, ofVec3f(0, 0, 1));
-             */
+            */
+            // restrict to ~ back half
+            eyePosition = ofVec3f(ofClamp(eyePosition->x, -visitorRadius, +visitorRadius),
+//                                  ofClamp(eyePosition->y, -50, +visitorRadius),
+                                  ofClamp(eyePosition->y, -visitorRadius, +visitorRadius),
+                                  ofClamp(eyePosition->z, visitorFloor, visitorCeiling));
+            
+            if(positionLogTimer.tick() && lastEyePosition != eyePosition) {
+                positionLog << ofGetTimestampString()
+                    << "\t" << eyePosition->x
+                    << "\t" << eyePosition->y
+                    << "\t" << eyePosition->z
+                    << "\t" << lookAngle
+                    << "\n";
+                lastEyePosition = eyePosition;
+            }
         }
     }
     void updateMotors() {
@@ -520,6 +558,11 @@ public:
             ofPopStyle();
             ofPopMatrix();
         }
+        
+        ofPushMatrix();
+        ofTranslate(0, ofGetHeight() - 360);
+        syphonCam.draw(0, 0, 640, 360);
+        ofPopMatrix();
         
         gui.draw();
         

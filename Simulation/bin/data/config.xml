@@ -69,7 +69,7 @@
     <interaction>
         <timeout>
             <enabled>1</enabled>
-            <seconds>20</seconds>
+            <seconds>60</seconds>
         </timeout>
     </interaction>
 </xml>
