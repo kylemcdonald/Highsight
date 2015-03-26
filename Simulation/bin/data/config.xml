@@ -59,7 +59,7 @@
     <oculus>
         <lookAngle>
             <default>180</default>
-            <offset>180</offset>
+            <offset>-45</offset>
             <speed>90</speed> <!-- degrees per second -->
         </lookAngle>
         <osc>
