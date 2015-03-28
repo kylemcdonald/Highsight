@@ -50,6 +50,7 @@ public:
     Motor nw, ne, sw, se;
     vector<Motor*> motorsSorted;
     float motorStatusTimeoutSeconds;
+    int motorStatusInterval = 50;
     ofEasyCam cam;
     ofVec2f mouseStart, mouseVec;
     ofVec3f moveVecCps;
@@ -76,7 +77,7 @@ public:
     ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn, visitorModeBtn;
     
     void setup() {
-        ofSetFrameRate(60);
+        ofSetFrameRate(30);
         
         ofXml config;
         if(!config.load("config.xml")) {
@@ -86,6 +87,7 @@ public:
         maxSpeedCps = config.getFloatValue("motors/speed/max");
         refreshTimer.setPeriod(config.getFloatValue("motors/refreshPeriodSeconds"));
         Motor::statusTimeoutSeconds = config.getFloatValue("motors/statusTimeoutSeconds");
+        motorStatusInterval = config.getIntValue("motors/statusIntervalMilliseconds");
         
         interactionTimeoutEnabled = config.getBoolValue("interaction/timeout/enabled");
         interactionTimeoutSeconds = config.getFloatValue("interaction/timeout/seconds");
@@ -176,6 +178,7 @@ public:
     }
     void reset() {
         resetCompleted = false;
+        setMotorsStatusInterval(motorStatusInterval);
         lastResetTime = ofGetElapsedTimeMillis();
         moveSpeedCps = homeSpeedCps;
         eyePosition = eyeHomePosition;
@@ -235,6 +238,14 @@ public:
         ofxOscMessage msg;
         msg.setAddress("/motor");
         msg.addIntArg(powerInt);
+        oscMotorsSend.sendMessage(msg, false);
+    }
+    void setMotorsStatusInterval(int intervalMsec) {
+        // time between /status reports in msec
+        ofxOscMessage msg;
+        //ofLog() << "/statusinterval " << intervalMsec;
+        msg.setAddress("/statusinterval");
+        msg.addIntArg(intervalMsec);
         oscMotorsSend.sendMessage(msg, false);
     }
     void sendMotorsEachCommand(string address, float value) {
