@@ -29,9 +29,9 @@ const float eyeHeightMin = 80, eyeHeightMax = height - eyePadding;
 const float eyeWidthMax = (width / 2) - eyePadding, eyeDepthMax = (depth / 2) - eyePadding;
 
 //  safe zone when controlled by visitor - a stubby cylinder
-const float visitorFloor = 200; // cm
-const float visitorCeiling = 290; // cm
-const float visitorRadius = 210; // cm
+const float visitorFloor = 240; // cm
+const float visitorCeiling = 270; // cm
+const float visitorRadius = 190; // cm
 
 enum LiveMode {
     LIVE_MODE_XY,
