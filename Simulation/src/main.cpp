@@ -77,7 +77,7 @@ public:
     ofxButton resetBtn, resetLookAngleBtn, toggleFullscreenBtn, visitorModeBtn;
     
     void setup() {
-        ofSetFrameRate(30);
+        ofSetFrameRate(40);
         
         ofXml config;
         if(!config.load("config.xml")) {
