@@ -60,7 +60,7 @@ const int encoder0PinA = 2;  // white   PORTD BIT 2
 const byte encoder0PinAMask = 0x04;
 const int encoder0PinB = 3;  // black   PORTD BIT 3
 const byte encoder0PinBMask = 0x08;
-const int encoder0PinZ = 4;  // orange
+//const int encoder0PinZ = 4;  // orange
 volatile long encoder0Pos __attribute__ ((section (".noinit")));
 volatile long encoder0Checksum __attribute__ ((section (".noinit")));
 const long encoder0ChecksumKey = 314159265L;
@@ -107,6 +107,7 @@ double currentSpeed = 0;
 
 
 // NETWORK SETUP  -------
+const int SS_SD_CARD = 4; // chip select for sd card reader on ethernet card (keep high to disable)
 
 // get motor id (0 for NW motor, 1 for NE, 2 for SE, 3 for SW) from EEPROM address 0
 int MOTOR_ID = EEPROM.read(EEPROM_MOTOR_ID);
@@ -305,6 +306,9 @@ void setupWatchdog() {
 
 
 void setupEthernet() {
+  pinMode(SS_SD_CARD, OUTPUT);
+  digitalWrite(SS_SD_CARD, 1);
+  
   Ethernet.begin(mac,listeningIP);
   UDP.begin(listeningPort);
 }
@@ -342,7 +346,7 @@ bool setupEncoder() {
   
   pinMode(encoder0PinA, INPUT); 
   pinMode(encoder0PinB, INPUT); 
-  pinMode(encoder0PinZ, INPUT);
+  //pinMode(encoder0PinZ, INPUT);
   // encoder pin on interrupt 0 (pin 2)
   attachInterrupt(0, doEncoderA, RISING);
   
