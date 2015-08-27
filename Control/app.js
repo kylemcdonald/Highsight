@@ -1,5 +1,6 @@
 // try using px instead of p to avoid overwriting commands
 // check ?dr 1
+// look for Roboteq manufacturer name
 
 var serialport = require('serialport');
 var express = require('express');
