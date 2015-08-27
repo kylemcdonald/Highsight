@@ -24,7 +24,7 @@ var server = app.listen(process.env.PORT || 3000, function () {
 });
 
 var SerialPort = require("serialport").SerialPort
-var serialPort = new SerialPort("/dev/cu.usbmodem1411", {
+var serialPort = new SerialPort("/dev/cu.usbmodem1421", {
   baudrate: 115200,
   disconnectedCallback: function() {
   	// todo: need to reconnect here
@@ -41,7 +41,7 @@ function tellRobo(command) {
 var revolutionsPerMeter = 16.818;
 var encoderResolution = 256;
 var countsPerMeter = revolutionsPerMeter * encoderResolution;
-var top = countsPerMeter * 9.75; // 14.16meters from floor at 120,000 = ~8611 counts per meter
+var top = countsPerMeter * 9.25; // 14.16meters from floor at 120,000 = ~8611 counts per meter
 var bottom = countsPerMeter * 0.10;
 var slows = "800";
 var fasts = "1300"; // 1300 seemed quite reliable, 1400 and 1350 crashed on first attempt
