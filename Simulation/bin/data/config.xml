@@ -10,6 +10,7 @@
     <motors>
         <refreshPeriodSeconds>1</refreshPeriodSeconds>
         <statusTimeoutSeconds>1</statusTimeoutSeconds>
+        <statusIntervalMilliseconds>200</statusIntervalMilliseconds>
         <geometry>
             <width>607</width> <!-- from west to east edge -->
             <depth>608</depth> <!-- from south to north edge -->
@@ -59,7 +60,7 @@
     <oculus>
         <lookAngle>
             <default>180</default>
-            <offset>155</offset>
+            <offset>-45</offset>
             <speed>90</speed> <!-- degrees per second -->
         </lookAngle>
         <osc>
@@ -69,7 +70,7 @@
     <interaction>
         <timeout>
             <enabled>1</enabled>
-            <seconds>20</seconds>
+            <seconds>60</seconds>
         </timeout>
     </interaction>
 </xml>

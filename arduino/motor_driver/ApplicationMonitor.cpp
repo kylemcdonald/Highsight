@@ -107,7 +107,7 @@ void CApplicationMonitor::Dump(Print &rDestination, bool bOnlyIfPresent) const
   }
 }
 
-void CApplicationMonitor::Dump(OscMessage &msg, bool bOnlyIfPresent) const
+void CApplicationMonitor::Dump(OSCMessage &msg, bool bOnlyIfPresent) const
 {
    CApplicationMonitorHeader Header;
   CCrashReport Report;
