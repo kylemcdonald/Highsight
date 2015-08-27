@@ -20,18 +20,34 @@ p {
 <h1>Highsight</h1>
 <div class="pure-g">
   <div class="pure-u-1-2">
-    <p><a id="goUpSlow" class="pure-button">Go Up Slow</a></p>
-    <p><a id="goDownSlow" class="pure-button">Go Down Slow</a></p>
-    <p><a id="goDownFast" class="pure-button">Go Down Fast</a></p>
+	<p><a id="goUpSlow" class="pure-button">Go Up Slow</a></p>
+	<p><a id="goDownSlow" class="pure-button">Go Down Slow</a></p>
+	<p><a id="goDownFast" class="pure-button">Go Down Fast</a></p>
+	<p><input id="loop" type="checkbox"> Loop</p>
   </div>
   <div class="pure-u-1-2 pure-form">
-      <p><input type="text" placeholder="0" id="position"></p>
-      <p><a id="getPosition" class="pure-button">Get Position</a></p>
+	<p><input type="text" placeholder="0" id="position"></p>
+	<p><a id="getPosition" class="pure-button">Get Position</a></p>
   </div>
 </div>
 
 <script>
+var upDuration = 7000;
+var loopDuration = 12000;
+function cycle() {
+	setTimeout(function() { $.get('goUpSlow') }, 0);
+	setTimeout(function() { $.get('goDownFast') }, upDuration);
+}
+var loop;
 $(function() {
+	$('#loop').click(function() {
+		if($(this).is(':checked')) {
+			cycle();
+			loop = setInterval(cycle, loopDuration);
+		} else {
+			clearInterval(loop);
+		}
+	});
 	$('#goUpSlow').click(function() { $.get('goUpSlow'); });
 	$('#goDownSlow').click(function() { $.get('goDownSlow'); });
 	$('#goDownFast').click(function() { $.get('goDownFast'); });
