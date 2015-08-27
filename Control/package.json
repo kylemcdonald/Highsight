@@ -1,0 +1,16 @@
+{
+  "name": "control",
+  "version": "1.0.0",
+  "description": "Motor control over serial for Highsight, and web API for debugging and control.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "author": "Kyle McDonald and Ranjit Bhatnagar",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.13.3",
+    "serialport": "^1.7.4"
+  }
+}

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxCv.h"
 #include "ofxGui.h"
 #include "Fisheye.h"
 
@@ -11,6 +10,7 @@ public:
     void update();
 	void draw();
     void keyPressed(int key);
+    void dragEvent(ofDragInfo event);
 	
     ofxPanel gui;
     ofParameter<ofVec2f> offset;
@@ -23,4 +23,8 @@ public:
     ofDirectory dir;
     int index;
 	ofImage img;
+    
+    ofVideoPlayer video;
+    bool useVideo;
+    bool drawGui;
 };
