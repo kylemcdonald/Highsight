@@ -6,71 +6,75 @@
 <script type="text/javascript" src="bootstrap/dist/js/bootstrap.min.js"></script>
 <style>
 body, html {
-  width: 100%;
-  background: black;
-  color: white;
-  text-align: center;
+	width: 100%;
+	background: black;
+	color: white;
 }
-p {
-  margin: .4em;
+div {
+	padding: 4px;
 }
 </style>
 </head>
 
-<body>
-<h1>Highsight</h1>
-<div class="pure-g">
-  <div class="pure-u-1-2">
-	<p><a id="goUpSlow" class="pure-button">Go Up Slow</a></p>
-	<p><a id="goDownSlow" class="pure-button">Go Down Slow</a></p>
-	<p><a id="goDownFast" class="pure-button">Go Down Fast</a></p>
-	<p><input id="loop" type="checkbox"> Loop</p>
-  </div>
-  <div class="pure-u-1-2 pure-form">
-  	<p id='serialStatus'></p>
-	<p><input type="text" placeholder="0" id="position"></p>
-	<p><a id="getPosition" class="pure-button">Get Position</a></p>
-  </div>
+<body class="epoch-theme-dark">
+<div class="row">
+	<div class="col-lg-6" style="max-width: 300px">
+		<div class="btn-group btn-group-lg" role="group">
+			<button id="go-up" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span></button>
+			<button id="go-down" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></button>
+		</div>
+		<div class="btn-group btn-group-lg" role="group">
+			<button id="repeat" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-repeat" aria-hidden="true"></span></button>
+		</div>
+		<div class="input-group">
+			<input type="text" class="form-control" placeholder="0" id="position">
+			<span class="input-group-btn">
+				<button id="get-position" type="button" class="btn btn-default">Get Position</button>
+			</span>
+		</div>
+		<div id='roboteq-status'></div>
+	</div>
 </div>
 
 <script>
 function checkStatus() {
-	$.get('serial/open', function(res, err) {
+	$.get('roboteq/open', function(res, err) {
 		if(res.open) {
-			$('#serialStatus').hide();
+			$('#roboteq-status').hide();
 		} else {
-			$('#serialStatus').show();
-			$('#serialStatus').text('Serial is ' + res.status + '.');
+			$('#roboteq-status').show();
+			$('#roboteq-status').text('Roboteq is ' + res.status + '.');
 		}
 	})
 }
 var upDuration = 7000;
-var loopDuration = 12000;
-function cycle() {
-	setTimeout(function() { $.get('goUpSlow') }, 0);
-	setTimeout(function() { $.get('goDownFast') }, upDuration);
+var repeatDuration = 12000;
+var repeatInterval;
+function repeat() {
+	setTimeout(function() { $.get('roboteq/go/up') }, 0);
+	setTimeout(function() { $.get('roboteq/go/down') }, upDuration);
 }
-var loop;
 $(function() {
-	$('#goUpSlow').click(function() { $.get('goUpSlow'); });
-	$('#goDownSlow').click(function() { $.get('goDownSlow'); });
-	$('#goDownFast').click(function() { $.get('goDownFast'); });
-	$('#getPosition').click(function() {
-		$.get('readEncoderCounterAbsolute', function(res, err) {
+	checkStatus();
+	setInterval(checkStatus, 1000);
+	$('#go-up').click(function() { $.get('roboteq/go/up') });
+	$('#go-down').click(function() { $.get('roboteq/go/down') });
+	$('#repeat').click(function() {
+		$(this).toggleClass('btn-default');
+		$(this).toggleClass('btn-success');
+		if($(this).hasClass('btn-success')) {
+			repeat();
+			repeatInterval = setInterval(repeat, repeatDuration);
+		} else {
+			clearInterval(repeatInterval);
+		}
+	});
+	$('#get-position').click(function() {
+		$.get('roboteq/get/position', function(res, err) {
 			console.log(res);
 			console.log(err);
 		});
 	});
-	$('#loop').click(function() {
-		if($(this).is(':checked')) {
-			cycle();
-			loop = setInterval(cycle, loopDuration);
-		} else {
-			clearInterval(loop);
-		}
-	});
-	checkStatus();
-	setInterval(checkStatus, 1000);
 })
 </script>
 
