@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "Motor control over serial for Highsight, and web API for debugging and control.",
   "main": "app.js",
+  "repository": "http://github.com/kylemcdonald/Highsight",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "bower install",
     "start": "nodemon app.js"
   },
   "author": "Kyle McDonald and Ranjit Bhatnagar",

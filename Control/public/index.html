@@ -1,8 +1,9 @@
 <html>
 <head>
 <title>Highsight</title>
-<link rel="stylesheet" href="style/pure.css">
-<script type="text/javascript" src="lib/jquery.min.js"></script>
+<script type="text/javascript" src="jquery/dist/jquery.min.js"></script>
+<link rel="stylesheet" href="bootstrap/dist/css/bootstrap.min.css">
+<script type="text/javascript" src="bootstrap/dist/js/bootstrap.min.js"></script>
 <style>
 body, html {
   width: 100%;
@@ -26,12 +27,23 @@ p {
 	<p><input id="loop" type="checkbox"> Loop</p>
   </div>
   <div class="pure-u-1-2 pure-form">
+  	<p id='serialStatus'></p>
 	<p><input type="text" placeholder="0" id="position"></p>
 	<p><a id="getPosition" class="pure-button">Get Position</a></p>
   </div>
 </div>
 
 <script>
+function checkStatus() {
+	$.get('serial/open', function(res, err) {
+		if(res.open) {
+			$('#serialStatus').hide();
+		} else {
+			$('#serialStatus').show();
+			$('#serialStatus').text('Serial is ' + res.status + '.');
+		}
+	})
+}
 var upDuration = 7000;
 var loopDuration = 12000;
 function cycle() {
@@ -40,14 +52,6 @@ function cycle() {
 }
 var loop;
 $(function() {
-	$('#loop').click(function() {
-		if($(this).is(':checked')) {
-			cycle();
-			loop = setInterval(cycle, loopDuration);
-		} else {
-			clearInterval(loop);
-		}
-	});
 	$('#goUpSlow').click(function() { $.get('goUpSlow'); });
 	$('#goDownSlow').click(function() { $.get('goDownSlow'); });
 	$('#goDownFast').click(function() { $.get('goDownFast'); });
@@ -57,6 +61,16 @@ $(function() {
 			console.log(err);
 		});
 	});
+	$('#loop').click(function() {
+		if($(this).is(':checked')) {
+			cycle();
+			loop = setInterval(cycle, loopDuration);
+		} else {
+			clearInterval(loop);
+		}
+	});
+	checkStatus();
+	setInterval(checkStatus, 1000);
 })
 </script>
 

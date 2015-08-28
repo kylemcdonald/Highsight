@@ -1,12 +1,10 @@
 // try using px instead of p to avoid overwriting commands
 // check ?dr 1
-// look for Roboteq manufacturer name
 
 var serialport = require('serialport');
 var express = require('express');
 var app = express();
 
-var comName = '/dev/cu.usbmodem1411';
 var revolutionsPerMeter = 16.818;
 var encoderResolution = 256;
 var countsPerMeter = revolutionsPerMeter * encoderResolution;
@@ -18,6 +16,7 @@ var downac = '15000'; // 15000
 var downdc = '12000'; // 12000
 
 app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/bower_components'));
 
 var server = app.listen(process.env.PORT || 3000, function () {
 	var host = server.address().address;
@@ -35,35 +34,73 @@ function listPorts() {
 		});
 	});
 }
-listPorts();
+
+function getComName(description, cb) {
+	serialport.list(function(err, ports) {
+		ports.forEach(function(port) {
+			for(key in description) {
+				if(description[key] == port[key]) {
+					cb(null, port.comName);
+					return;
+				}
+			}
+		})
+		cb('Cannot find matching port.');
+	})
+}
 
 var serial;
-
-function connect() {
-	console.log('Trying to connect to ' + comName);
+var serialStatus = 'initializing';
+function updateSerialStatus(status) {
+	if(status != serialStatus) {
+		console.log('Serial is ' + status);
+	}
+	serialStatus = status;
+}
+function connect(description) {
 	if(serial && serial.isOpen()) return;
-	serial = new serialport.SerialPort(comName, {
-		baudrate: 115200,
-		parser: serialport.parsers.readline('\r'),
-		disconnectedCallback: function() {
-			console.log('Got disconnected!');
-			reconnect();
-		}
-	}, false);
-	serial.open(function(err) {
+	getComName(description, function(err, comName) {
 		if(err) {
-			reconnect();
+			updateSerialStatus('not found, searching');
+			reconnect(description);
 			return;
-		} else {
-			console.log('Opened ' + comName);
 		}
-	});
+		serial = new serialport.SerialPort(comName, {
+			baudrate: 115200,
+			parser: serialport.parsers.readline('\r'),
+			disconnectedCallback: function() {
+				updateSerialStatus('disconnected, reconnecting');
+				setTimeout(function() { connect(description) }, 1000);
+			}
+		}, false);
+		serial.open(function(err) {
+			if(err) {
+				updateSerialStatus('error connecting, reconnecting');
+				reconnect(description);
+			} else {
+				updateSerialStatus('connected');
+			}
+		});
+	})
 }
-function reconnect() {
-	setTimeout(connect, 1000);	
+function reconnect(description) {
+	setTimeout(function() { connect(description) }, 1000);	
 }
+connect({manufacturer: 'Roboteq'});
 
-connect();
+app.get('/serial/open', function(req, res) {
+	res.json({
+		'status': serialStatus,
+		'open': Boolean(serial && serial.isOpen())
+	})
+})
+
+app.get('/serial/list', function(req, res) {
+	serialport.list(function (err, ports) {
+		if(err) res.sendStatus(500);
+		else res.json(ports);
+	})
+})
 
 function tellRobo(command) {
 	if(!serial.isOpen()) return;

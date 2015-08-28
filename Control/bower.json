@@ -1,0 +1,20 @@
+{
+  "name": "Control",
+  "version": "0.0.0",
+  "homepage": "https://github.com/kylemcdonald/Highsight",
+  "authors": [
+    "Kyle McDonald"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.5",
+    "jquery": "~2.1.4"
+  }
+}
