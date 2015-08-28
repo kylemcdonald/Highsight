@@ -67,7 +67,7 @@ exports.command = function(command) {
 		console.log('Ignored command: ' + command);
 		return;
 	}
-	serial.write(command + '\r\n', function(err, results) {
+	serial.write(command + '\r', function(err, results) {
 		if(err) console.log('err ' + err);
 		if(results) console.log('results ' + results);
 	});
@@ -89,7 +89,7 @@ exports.query = function(query, cb) {
 		var type = parts[0].toLowerCase();
 		cb(type, parts[1]);
 	});
-	serial.write(query + '\r\n', function(err, results) {
+	serial.write(query + '\r', function(err, results) {
 		if(err) console.log('err ' + err);
 		if(results) console.log('results ' + results);
 	});
@@ -97,26 +97,32 @@ exports.query = function(query, cb) {
 
 // based on:
 // http://www.roboteq.com/index.php/docman/motor-controllers-documents-and-files/documentation/user-manual/7-nextgen-controllers-user-manual/file
+// general notes (p 115):
+// - commands are not case sensitive
+// - commands are terminated by carriage return (hex 0x0d, '\r')
+// - controlloer will echo every command it receives
+// - for commands where no reply is expected, it will return a '+' character
+// - for bad commands, it will return a '-' character
 exports.setAcceleration = function(acceleration) {
-	exports.command('!AC 1 ' + acceleration);
+	exports.command('!ac 1 ' + acceleration);
 }
 exports.setDeceleration = function(deceleration) {
-	exports.command('!DC 1 ' + deceleration);
+	exports.command('!dc 1 ' + deceleration);
 }
 exports.setSpeed = function(speed) { // units are .1 * RPM / s, called "set velocity" in manual
-	exports.command('!S 1 ' + speed);
+	exports.command('!s 1 ' + speed);
 }
 exports.setPosition = function(position) {
-	exports.command('!P 1 ' + position);
+	exports.command('!p 1 ' + position);
 }
 exports.getPosition = function(cb) {
-	exports.query('?C 1', cb); // also called "encoder counter absolute"
+	exports.query('?c 1', cb); // also called "encoder counter absolute"
 }
 exports.getSpeed = function(cb) {
-	exports.query('?S 1', cb);
+	exports.query('?s 1', cb);
 }
 exports.getVolts = function(cb) {
-	exports.query('?V 1', cb); // returns internal voltage * 10 : main battery voltage * 10 : v5out on dsub in millivolts, see p 186
+	exports.query('?v 1', cb); // returns internal voltage * 10 : main battery voltage * 10 : v5out on dsub in millivolts, see p 186
 }
 exports.getMotorAmps = function(cb) { // returns units of amps * 10, p 173
 	exports.query('?A 1', cb);

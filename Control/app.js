@@ -9,7 +9,7 @@ var top = Math.round(countsPerMeter * 9.25); // 14.16meters from floor at 120,00
 var bottom = Math.round(countsPerMeter * 0.10);
 var slows = 800;
 var slowac = 2000;
-var fasts = 1300; // 1300 seemed quite reliable, 1400 and 1350 crashed on first attempt
+var fasts = 1300; // 1300 is quite reliable, 1400 and 1350 will crash if loop error is set to 500ms
 var fastac = 15000; // 15000 
 var fastdc = 12000; // 12000
 
@@ -37,6 +37,7 @@ app.get('/roboteq/go/down', function(req, res) {
 	roboteq.setAcceleration(fastac);
 	roboteq.setDeceleration(fastdc);
 	roboteq.setPosition(bottom);
+	res.sendStatus(200);
 })
 
 app.get('/roboteq/go/up', function(req, res) {
@@ -45,6 +46,7 @@ app.get('/roboteq/go/up', function(req, res) {
 	roboteq.setAcceleration(slowac);
 	roboteq.setDeceleration(slowac);
 	roboteq.setPosition(top);
+	res.sendStatus(200);
 })
 
 app.get('/roboteq/get/position', function(req, res) {
