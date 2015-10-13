@@ -3,6 +3,12 @@
 
 var serialport = require('serialport');
 
+function clamp(x, low, high) {
+	if(x < low) return low;
+	if(x > high) return high;
+	return x;
+}
+
 function getComName(cb) {
 	serialport.list(function(err, ports) {
 		ports.forEach(function(port) {
@@ -24,8 +30,11 @@ function updateSerialStatus(status) {
 	serialStatus = status;
 }
 
-exports.connect = function() {
+var config;
+
+exports.connect = function(params) {
 	if(serial && serial.isOpen()) return;
+	config = params;
 	getComName(function(err, comName) {
 		if(err) {
 			updateSerialStatus('not found, searching');
@@ -100,19 +109,23 @@ exports.query = function(query, cb) {
 // general notes (p 115):
 // - commands are not case sensitive
 // - commands are terminated by carriage return (hex 0x0d, '\r')
-// - controlloer will echo every command it receives
+// - controller will echo every command it receives
 // - for commands where no reply is expected, it will return a '+' character
 // - for bad commands, it will return a '-' character
 exports.setAcceleration = function(acceleration) {
+	acceleration = clamp(acceleration, 0, config.accelerationLimit);
 	exports.command('!ac 1 ' + acceleration);
 }
 exports.setDeceleration = function(deceleration) {
+	deceleration = clamp(deceleration, 0, config.decelerationLimit);
 	exports.command('!dc 1 ' + deceleration);
 }
 exports.setSpeed = function(speed) { // units are .1 * RPM / s, called "set velocity" in manual
+	speed = clamp(speed, 0, config.speedLimit);
 	exports.command('!s 1 ' + speed);
 }
 exports.setPosition = function(position) {
+	position = clamp(position, config.bottom, config.top);
 	exports.command('!p 1 ' + position);
 }
 exports.getPosition = function(cb) {
