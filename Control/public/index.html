@@ -32,6 +32,30 @@ div {
 				<button id="get-position" type="button" class="btn btn-default">Get Position</button>
 			</span>
 		</div>
+		<div class="input-group">
+			<input type="text" class="form-control" placeholder="0" id="speed">
+			<span class="input-group-btn">
+				<button id="get-speed" type="button" class="btn btn-default">Get Speed</button>
+			</span>
+		</div>
+		<div class="input-group">
+			<input type="text" class="form-control" placeholder="0" id="volts">
+			<span class="input-group-btn">
+				<button id="get-volts" type="button" class="btn btn-default">Get Volts</button>
+			</span>
+		</div>
+		<div class="input-group">
+			<input type="text" class="form-control" placeholder="0" id="battery-amps">
+			<span class="input-group-btn">
+				<button id="get-battery-amps" type="button" class="btn btn-default">Get Battery Amps</button>
+			</span>
+		</div>
+		<div class="input-group">
+			<input type="text" class="form-control" placeholder="0" id="motor-amps">
+			<span class="input-group-btn">
+				<button id="get-motor-amps" type="button" class="btn btn-default">Get Motor Amps</button>
+			</span>
+		</div>
 		<div id='roboteq-status'></div>
 	</div>
 </div>
@@ -47,12 +71,13 @@ function checkStatus() {
 		}
 	})
 }
-var upDuration = 7000;
-var repeatDuration = 12000;
+var upDuration = 14000;
+var downDuration = 4000;
+var repeatDuration = upDuration + downDuration;
 var repeatInterval;
 function repeat() {
-	setTimeout(function() { $.get('roboteq/go/up') }, 0);
-	setTimeout(function() { $.get('roboteq/go/down') }, upDuration);
+	setTimeout(function() { $.get('roboteq/go/up'); }, 0);
+	setTimeout(function() { $.get('roboteq/go/down'); }, upDuration);
 }
 $(function() {
 	checkStatus();
@@ -62,17 +87,36 @@ $(function() {
 	$('#repeat').click(function() {
 		$(this).toggleClass('btn-default');
 		$(this).toggleClass('btn-success');
+		console.log('clicked: ' + repeatInterval);
+		if(repeatInterval) clearInterval(repeatInterval);
 		if($(this).hasClass('btn-success')) {
 			repeat();
 			repeatInterval = setInterval(repeat, repeatDuration);
-		} else {
-			clearInterval(repeatInterval);
 		}
 	});
 	$('#get-position').click(function() {
 		$.get('roboteq/get/position', function(res, err) {
-			console.log(res);
-			console.log(err);
+			$('#position').val(res.position);
+		});
+	});
+	$('#get-speed').click(function() {
+		$.get('roboteq/get/speed', function(res, err) {
+			$('#speed').val(res.speed);
+		});
+	});
+	$('#get-volts').click(function() {
+		$.get('roboteq/get/volts', function(res, err) {
+			$('#volts').val(res.volts);
+		});
+	});
+	$('#get-battery-amps').click(function() {
+		$.get('roboteq/get/battery/amps', function(res, err) {
+			$('#battery-amps').val(res.amps);
+		});
+	});
+	$('#get-motor-amps').click(function() {
+		$.get('roboteq/get/motor/amps', function(res, err) {
+			$('#motor-amps').val(res.amps);
 		});
 	});
 })
