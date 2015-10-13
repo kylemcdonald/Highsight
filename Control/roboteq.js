@@ -11,16 +11,21 @@ function clamp(x, low, high) {
 
 function getComName(cb) {
 	serialport.list(function(err, ports) {
-		ports.forEach(function(port) {
+		var found = ports.some(function(port) {
 			if(port.manufacturer == 'Roboteq') {
 				cb(null, port.comName);
-				return;
+				return true;				
+			} else {
+  			return false;
 			}
 		})
-		cb('Cannot find matching port.');
+		if(!found) {
+  		cb('Cannot find matching port.');
+		}
 	})
 }
 
+var config = {};
 var serial;
 var serialStatus = 'initializing';
 function updateSerialStatus(status) {
@@ -30,7 +35,29 @@ function updateSerialStatus(status) {
 	serialStatus = status;
 }
 
-var config;
+var dataCallbackHook;
+function dataCallback(data) {
+	if(data == '+') {
+		console.log('dataCallback: no reply expected');
+		if(dataCallbackHook) {
+			delete dataCallbackHook;
+		}
+		return;
+	}
+	if(data == '-') {
+		console.log('dataCallback: bad command');
+		if(dataCallbackHook) {
+			delete dataCallbackHook;
+		}
+		return;
+	}
+	console.log('dataCallback: ' + data);
+	if(dataCallbackHook) {
+		console.log("deleting callback hook");
+		dataCallbackHook(data);
+		delete dataCallbackHook;
+	}
+}
 
 exports.connect = function(params) {
 	if(serial && serial.isOpen()) return;
@@ -49,12 +76,14 @@ exports.connect = function(params) {
 				reconnect();
 			}
 		}, false);
+		serial.on('data', dataCallback);
 		serial.open(function(err) {
 			if(err) {
 				updateSerialStatus('error connecting, reconnecting');
 				reconnect();
 			} else {
 				updateSerialStatus('connected');
+				exports.setEcho(false);
 			}
 		});
 	})
@@ -76,10 +105,17 @@ exports.command = function(command) {
 		console.log('Ignored command: ' + command);
 		return;
 	}
-	serial.write(command + '\r', function(err, results) {
-		if(err) console.log('err ' + err);
-		if(results) console.log('results ' + results);
-	});
+	write(command + '\r');
+}
+
+function write(command, cb) {
+	if(cb) {
+		dataCallbackHook = cb;
+	}
+	console.log('write: ' + command);
+	serial.write(command, function(err) {
+		if(err) console.log('err ' + err);    
+	})
 }
 
 exports.query = function(query, cb) {
@@ -88,19 +124,10 @@ exports.query = function(query, cb) {
 		cb();
 		return;
 	}
-	serial.on('data', function(data) {
-		if(!data) {
-			console.log('data event with no data');
-			return;
-		}
-		console.log('got data: ' + data);
-		var parts = data.split('=')[0];
-		var type = parts[0].toLowerCase();
-		cb(type, parts[1]);
-	});
-	serial.write(query + '\r', function(err, results) {
-		if(err) console.log('err ' + err);
-		if(results) console.log('results ' + results);
+	write(query + '\r', function(data) {
+		var parts = data.split('=');
+		var number = Number(parts[1]); // this will fail if a command does not return a number
+		cb(number);
 	});
 }
 
@@ -112,6 +139,21 @@ exports.query = function(query, cb) {
 // - controller will echo every command it receives
 // - for commands where no reply is expected, it will return a '+' character
 // - for bad commands, it will return a '-' character
+exports.safeCall = function(cb) {
+	cb();
+	// exports.getMotorAmps(function(amps) {
+	// 	if(amps > 0) {
+	// 		cb();
+	// 	}
+	// })
+}
+exports.setEcho = function(enable) {
+	if(enable) {
+		exports.command('^echof 0');
+	} else {
+		exports.command('^echof 1');
+	}
+}
 exports.setAcceleration = function(acceleration) {
 	acceleration = clamp(acceleration, 0, config.accelerationLimit);
 	exports.command('!ac 1 ' + acceleration);
@@ -125,27 +167,46 @@ exports.setSpeed = function(speed) { // units are .1 * RPM / s, called "set velo
 	exports.command('!s 1 ' + speed);
 }
 exports.setPosition = function(position) {
-	position = clamp(position, config.bottom, config.top);
-	exports.command('!p 1 ' + position);
+	exports.safeCall(function() {
+		position = clamp(position, config.bottom, config.top);
+		exports.command('!p 1 ' + position);
+	})
+}
+exports.setPositionRelative = function(distance) {
+	exports.getPosition(function(result) {
+		exports.setPosition(result + Number(distance));
+	})
 }
 exports.getPosition = function(cb) {
 	exports.query('?c 1', cb); // also called "encoder counter absolute"
 }
-exports.getSpeed = function(cb) {
+exports.getSpeed = function(cb) { // units are .1 * RPM / s, called "set velocity" in manual
 	exports.query('?s 1', cb);
 }
+// returns voltage * 10 : main battery voltage * 10 : v5out on dsub in millivolts, see p 186
+// ?v 1 returns internal voltage
+// ?v 2 returns motor voltage
+// ?v 3 return 5v on dsub output
 exports.getVolts = function(cb) {
-	exports.query('?v 1', cb); // returns internal voltage * 10 : main battery voltage * 10 : v5out on dsub in millivolts, see p 186
+	exports.query('?v 2', function(volts) {
+		cb(volts / 10.);
+	});
 }
 exports.getMotorAmps = function(cb) { // returns units of amps * 10, p 173
-	exports.query('?A 1', cb);
+	exports.query('?A 1', function(amps) {
+		cb(amps / 10.); 
+	});
 }
 exports.getBatteryAmps = function(cb) { // returns units of amps * 10, p 175
-	exports.query('?BA 1', cb);
+	exports.query('?BA 1', function(amps) {
+		cb(amps / 10.);
+	})
 }
 exports.getDestinationReached = function(cb) { // p 179, p 104
 	exports.query('?DR 1', cb);
 }
+
+// follow commands are untested
 exports.getFaults = function(cb) {
 	exports.query('?FF 1', cb); // see p 180 for the meaning of each bit
 }
