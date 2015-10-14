@@ -16,17 +16,13 @@ public:
     ofCamera camera;
     ofxOculusDK2 oculusRift;
     ofxOscReceiver osc;
-    float targetLookAngle = 0;
+    float targetLookAngle = 117.5;
     float lookAngle = 0;
     bool debug = false;
 	
 	void setup() {
         ofBackground(0);
         ofHideCursor();
-        
-        ofSetWindowPosition(1920, 0);
-        ofToggleFullscreen();
-        ofViewport(ofGetNativeViewport());
         
         cam.setup();
         cam.set("","Black Syphon");
@@ -43,23 +39,35 @@ public:
 	}
     void saveScreen(string prefix) {
         cam.save(prefix + ofGetTimestampString() + "-camera.tiff");
-        ofSaveScreen(prefix + ofGetTimestampString() + "-oculus.tiff");
+//        ofSaveScreen(prefix + ofGetTimestampString() + "-oculus.tiff");
     }
     void update() {
+        if( ofGetFrameNum() == 2 ){
+            ofSetWindowPosition(1920, 0);
+        }
+        if( ofGetFrameNum() == 4 ){
+            ofSetFullscreen(true);
+            ofViewport(ofGetNativeViewport());
+        }
+        
         renderTimer.tick();
         while(osc.hasWaitingMessages()) {
             ofxOscMessage msg;
             osc.getNextMessage(&msg);
-            if(msg.getAddress() == "/lookAngle") {
+            if(msg.getAddress() == "/lookAngle/set") {
                 targetLookAngle = msg.getArgAsFloat(0);
             }
-            if(msg.getAddress() == "/save") {
+            if(msg.getAddress() == "/lookAngle/add") {
+                targetLookAngle += msg.getArgAsFloat(0);
+                ofLog() << "targetLookAngle: " << targetLookAngle;
+            }
+            if(msg.getAddress() == "/screenshot") {
                 saveScreen("button/");
             }
         }
         lookAngle = ofLerp(lookAngle, targetLookAngle, .1);
         if(screenshotTimer.tick()) {
-            saveScreen("automatic/");
+//            saveScreen("automatic/"); // uncomment to enable automatic screenshot
         }
 	}
     void draw() {
@@ -102,6 +110,9 @@ public:
 	void keyPressed(int key) {
         if(key == 'd') {
             debug = !debug;
+        }
+        if(key == 'f') {
+            ofToggleFullscreen();
         }
 	}
 };

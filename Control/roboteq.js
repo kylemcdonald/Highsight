@@ -35,33 +35,32 @@ function updateSerialStatus(status) {
 	serialStatus = status;
 }
 
-var dataCallbackHook;
+var dataCallbackHooks = [];
 function dataCallback(data) {
 	if(data == '+') {
 		console.log('dataCallback: no reply expected');
-		if(dataCallbackHook) {
-			delete dataCallbackHook;
+		if(dataCallbackHooks.length > 0) {
+			dataCallbackHooks.pop();
 		}
 		return;
 	}
 	if(data == '-') {
 		console.log('dataCallback: bad command');
-		if(dataCallbackHook) {
-			delete dataCallbackHook;
+		if(dataCallbackHooks.length > 0) {
+			dataCallbackHooks.pop();
 		}
 		return;
 	}
 	console.log('dataCallback: ' + data);
-	if(dataCallbackHook) {
-		console.log("deleting callback hook");
-		dataCallbackHook(data);
-		delete dataCallbackHook;
+	if(dataCallbackHooks.length > 0) {
+		// console.log("deleting callback hook");
+		dataCallbackHooks.pop()(data);
 	}
 }
 
 exports.connect = function(params) {
+	if(params) config = params;
 	if(serial && serial.isOpen()) return;
-	config = params;
 	getComName(function(err, comName) {
 		if(err) {
 			updateSerialStatus('not found, searching');
@@ -110,7 +109,7 @@ exports.command = function(command) {
 
 function write(command, cb) {
 	if(cb) {
-		dataCallbackHook = cb;
+		dataCallbackHooks.push(cb);
 	}
 	console.log('write: ' + command);
 	serial.write(command, function(err) {
@@ -129,6 +128,14 @@ exports.query = function(query, cb) {
 		var number = Number(parts[1]); // this will fail if a command does not return a number
 		cb(number);
 	});
+}
+
+function unsafe(x) {
+	if(x === undefined || x == null || isNaN(x)) {
+		console.log("unsafe value passed to roboteq: " + x);
+		return true;
+	}
+	return false;
 }
 
 // based on:
@@ -155,25 +162,31 @@ exports.setEcho = function(enable) {
 	}
 }
 exports.setAcceleration = function(acceleration) {
+	if(unsafe(acceleration)) return;
 	acceleration = clamp(acceleration, 0, config.accelerationLimit);
 	exports.command('!ac 1 ' + acceleration);
 }
 exports.setDeceleration = function(deceleration) {
+	if(unsafe(deceleration)) return;
 	deceleration = clamp(deceleration, 0, config.decelerationLimit);
 	exports.command('!dc 1 ' + deceleration);
 }
 exports.setSpeed = function(speed) { // units are .1 * RPM / s, called "set velocity" in manual
+	if(unsafe(speed)) return;
 	speed = clamp(speed, 0, config.speedLimit);
 	exports.command('!s 1 ' + speed);
 }
 exports.setPosition = function(position) {
+	if(unsafe(position)) return;
 	exports.safeCall(function() {
 		position = clamp(position, config.bottom, config.top);
 		exports.command('!p 1 ' + position);
 	})
 }
 exports.setPositionRelative = function(distance) {
+	if(unsafe(distance)) return;
 	exports.getPosition(function(result) {
+		console.log('setPositionRelative to ' + distance + ' plus ' + result);
 		exports.setPosition(result + Number(distance));
 	})
 }

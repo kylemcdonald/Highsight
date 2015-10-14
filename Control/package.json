@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.13.3",
+    "osc": "^1.4.0",
     "serialport": "^1.7.4"
   }
 }

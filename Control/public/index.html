@@ -1,98 +1,119 @@
 <html>
 <head>
 <title>Highsight</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <script type="text/javascript" src="jquery/dist/jquery.min.js"></script>
 <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.min.css">
 <script type="text/javascript" src="bootstrap/dist/js/bootstrap.min.js"></script>
 <style>
 body, html {
 	width: 100%;
+	height: 100%;
 	background: black;
 	color: white;
 }
 div {
-	padding: 4px;
+	padding: 1em;
+}
+#debug-controls {
+	display: none;
+}
+label {
+	user-select: none;
+	-webkit-user-select: none;
 }
 </style>
 </head>
 
 <body class="epoch-theme-dark">
 <div class="row">
-	<div class="col-lg-6" style="max-width: 300px">
+	<div class="col-md-2" style="width: 300px">
 		<div class="btn-group btn-group-lg" role="group">
-			<button id="setup" type="button" class="btn btn-default btn-lg">setup</button>
-			<button id="shutdown" type="button" class="btn btn-default btn-lg">shutdown</button>
+			<button id="top" type="button" class="btn btn-danger btn-lg scene">top</button>
+			<button id="bottom" type="button" class="btn btn-danger btn-lg scene">bottom</button>
 		</div>
-		<div class="btn-group btn-group-sm" role="group">
-			<button id="scene1" type="button" class="btn btn-default btn-lg">1</button>
-			<button id="scene2" type="button" class="btn btn-default btn-lg">2</button>
-			<button id="scene3" type="button" class="btn btn-default btn-lg">3</button>
-			<button id="scene4" type="button" class="btn btn-default btn-lg">4</button>
-			<button id="scene5" type="button" class="btn btn-default btn-lg">5</button>
-			<button id="scene6" type="button" class="btn btn-default btn-lg">6</button>
-			<button id="scene7" type="button" class="btn btn-default btn-lg">7</button>
+		<div><button id="scene1" type="button" class="btn btn-default btn-lg btn-block scene">top of box</button></div>
+		<div><button id="scene2" type="button" class="btn btn-default btn-lg btn-block scene">center of box</button></div>
+		<div><button id="scene3" type="button" class="btn btn-default btn-lg btn-block scene">bottom of box</button></div>
+		<div><button id="scene4" type="button" class="btn btn-default btn-lg btn-block scene">down to beneath box</button></div>
+		<div><button id="scene5" type="button" class="btn btn-default btn-lg btn-block scene">drop</button></div>
+		<div><button id="scene6" type="button" class="btn btn-default btn-lg btn-block scene">up to beneath box</button></div>
+		<div id='roboteq-status'>Loading...</div>
+		<div class="input-group"><label><input type="checkbox" id="debug-checkbox"> Enable Debug</label></div>
+		<div id="debug-controls">
+			<div class="input-group">
+				<p>Rotate</p>
+				<button id="rotate-left-hard" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-fast-backward" aria-hidden="true"></span></button>
+				<button id="rotate-left" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span></button>
+				<button id="rotate-right" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-forward" aria-hidden="true"></span></button>
+				<button id="rotate-right-hard" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-fast-forward" aria-hidden="true"></span></button>
+			</div>
+			<!--
+			<div class="input-group">
+				<p>Nudge</p>
+				<button id="nudge-up" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span></button>
+				<button id="nudge-down" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></button>
+			</div>
+			-->
+			<div><button id="screenshot" type="button" class="btn btn-default btn-lg btn-block">Screenshot</button></div>
+			<div class="input-group">
+				<input type="text" class="form-control" placeholder="0" id="position">
+				<span class="input-group-btn">
+					<button id="get-position" type="button" class="btn btn-default">Get Position</button>
+				</span>
+			</div>
+			<div class="input-group">
+				<input type="text" class="form-control" placeholder="0" id="meters">
+				<span class="input-group-btn">
+					<button id="get-meters" type="button" class="btn btn-default">Get Meters</button>
+				</span>
+			</div>
+			<div class="input-group">
+				<input type="text" class="form-control" placeholder="0" id="speed">
+				<span class="input-group-btn">
+					<button id="get-speed" type="button" class="btn btn-default">Get Speed</button>
+				</span>
+			</div>
+			<div class="input-group">
+				<input type="text" class="form-control" placeholder="0" id="volts">
+				<span class="input-group-btn">
+					<button id="get-volts" type="button" class="btn btn-default">Get Volts</button>
+				</span>
+			</div>
+			<div class="input-group">
+				<input type="text" class="form-control" placeholder="0" id="battery-amps">
+				<span class="input-group-btn">
+					<button id="get-battery-amps" type="button" class="btn btn-default">Get Battery Amps</button>
+				</span>
+			</div>
+			<div class="input-group">
+				<input type="text" class="form-control" placeholder="0" id="motor-amps">
+				<span class="input-group-btn">
+					<button id="get-motor-amps" type="button" class="btn btn-default">Get Motor Amps</button>
+				</span>
+			</div>
 		</div>
-		<!-- <div class="btn-group btn-group-lg" role="group">
-			<button id="go-up" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span></button>
-			<button id="go-down" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></button>
-		</div>
-		<div class="btn-group btn-group-lg" role="group">
-			<button id="repeat" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-repeat" aria-hidden="true"></span></button>
-		</div> -->
-		<div class="input-group">
-			<button id="nudge-up" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span></button>
-			<button id="nudge-down" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></button>
-			<span> Nudge</span>
-		</div>
-		<div class="input-group">
-			<input type="text" class="form-control" placeholder="0" id="position">
-			<span class="input-group-btn">
-				<button id="get-position" type="button" class="btn btn-default">Get Position</button>
-			</span>
-		</div>
-		<div class="input-group">
-			<input type="text" class="form-control" placeholder="0" id="meters">
-			<span class="input-group-btn">
-				<button id="get-meters" type="button" class="btn btn-default">Get Meters</button>
-			</span>
-		</div>
-		<div class="input-group">
-			<input type="text" class="form-control" placeholder="0" id="speed">
-			<span class="input-group-btn">
-				<button id="get-speed" type="button" class="btn btn-default">Get Speed</button>
-			</span>
-		</div>
-		<div class="input-group">
-			<input type="text" class="form-control" placeholder="0" id="volts">
-			<span class="input-group-btn">
-				<button id="get-volts" type="button" class="btn btn-default">Get Volts</button>
-			</span>
-		</div>
-		<div class="input-group">
-			<input type="text" class="form-control" placeholder="0" id="battery-amps">
-			<span class="input-group-btn">
-				<button id="get-battery-amps" type="button" class="btn btn-default">Get Battery Amps</button>
-			</span>
-		</div>
-		<div class="input-group">
-			<input type="text" class="form-control" placeholder="0" id="motor-amps">
-			<span class="input-group-btn">
-				<button id="get-motor-amps" type="button" class="btn btn-default">Get Motor Amps</button>
-			</span>
-		</div>
-		<div id='roboteq-status'></div>
 	</div>
 </div>
 
 <script>
 function checkStatus() {
-	$.get('roboteq/open', function(res, err) {
-		if(res.open) {
-			$('#roboteq-status').hide();
-		} else {
-			$('#roboteq-status').show();
-			$('#roboteq-status').text('Roboteq is ' + res.status + '.');
-		}
+	$.get('roboteq/open', function (res, err) {
+		$('#roboteq-status').text(res.status ? 'Roboteq is ' + res.status + '.' : 'Server is down.');
+	})
+	$.get('transitions/safe', function (res, err) {
+		$('.scene').each(function (i, e) {
+			if(res.indexOf(e.id) > -1) {
+				$(e).addClass('btn-primary');
+				$(e).prop('disabled', false);
+			} else {
+				$(e).removeClass('btn-primary');
+				$(e).removeClass('btn-warning');
+				$(e).prop('disabled', true);
+			}
+		})
 	})
 }
 var upDuration = 14000;
@@ -106,27 +127,26 @@ function repeat() {
 $(function() {
 	checkStatus();
 	setInterval(checkStatus, 1000);
-	// $('#go-up').click(function() { $.get('roboteq/go/up') });
-	// $('#go-down').click(function() { $.get('roboteq/go/down') });
-	// $('#repeat').click(function() {
-	// 	$(this).toggleClass('btn-default');
-	// 	$(this).toggleClass('btn-success');
-	// 	console.log('clicked: ' + repeatInterval);
-	// 	if(repeatInterval) clearInterval(repeatInterval);
-	// 	if($(this).hasClass('btn-success')) {
-	// 		repeat();
-	// 		repeatInterval = setInterval(repeat, repeatDuration);
-	// 	}
-	// });
-	$('#shutdown').click(function() { $.get('roboteq/transition', {name: 'shutdown'}) })
-	$('#setup').click(function() { $.get('roboteq/transition', {name: 'setup'}) })
-	$('#scene1').click(function() { $.get('roboteq/transition', {name: 'scene1'}) })
-	$('#scene2').click(function() { $.get('roboteq/transition', {name: 'scene2'}) })
-	$('#scene3').click(function() { $.get('roboteq/transition', {name: 'scene3'}) })
-	$('#scene4').click(function() { $.get('roboteq/transition', {name: 'scene4'}) })
-	$('#scene5').click(function() { $.get('roboteq/transition', {name: 'scene5'}) })
-	$('#scene6').click(function() { $.get('roboteq/transition', {name: 'scene6'}) })
-	$('#scene7').click(function() { $.get('roboteq/transition', {name: 'scene7'}) })
+	$('#debug-checkbox').click(function() {
+		if ($(this).prop('checked')) {
+			$('#debug-controls').show();
+		} else {
+			$('#debug-controls').hide();
+		}
+	})
+	$('#top').click(function() { $.get('roboteq/transition', {name: 'top'}); })
+	$('#bottom').click(function() { $.get('roboteq/transition', {name: 'bottom'}) })
+	$('#scene1').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene1'}) })
+	$('#scene2').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene2'}) })
+	$('#scene3').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene3'}) })
+	$('#scene4').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene4'}) })
+	$('#scene5').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene5'}) })
+	$('#scene6').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene6'}) })
+	$('#screenshot').click(function() { $.get('oculus/screenshot') })
+	$('#rotate-left-hard').click(function() { $.get('oculus/lookAngle/add', {value: -25}); })
+	$('#rotate-left').click(function() { $.get('oculus/lookAngle/add', {value: -2.5}); })
+	$('#rotate-right').click(function() { $.get('oculus/lookAngle/add', {value: +2.5}); })
+	$('#rotate-right-hard').click(function() { $.get('oculus/lookAngle/add', {value: +25}); })
 	$('#nudge-up').click(function() { $.get('roboteq/nudge/up'); })
 	$('#nudge-down').click(function() { $.get('roboteq/nudge/down'); })
 	$('#get-position').click(function() {
