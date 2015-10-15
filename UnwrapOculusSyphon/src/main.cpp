@@ -41,13 +41,19 @@ public:
         cam.save(prefix + ofGetTimestampString() + "-camera.tiff");
 //        ofSaveScreen(prefix + ofGetTimestampString() + "-oculus.tiff");
     }
+    int goFullscreen = 0;
     void update() {
-        if( ofGetFrameNum() == 2 ){
+        if( goFullscreen == 2 ){
+            ofSetFullscreen(false);
             ofSetWindowPosition(1920, 0);
         }
-        if( ofGetFrameNum() == 4 ){
+        if( goFullscreen == 4 ){
             ofSetFullscreen(true);
             ofViewport(ofGetNativeViewport());
+        }
+        goFullscreen++;
+        if(goFullscreen > 4 && ofGetWindowPositionX() < 1440) {
+            goFullscreen = 0;
         }
         
         renderTimer.tick();
