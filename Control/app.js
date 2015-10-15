@@ -17,6 +17,7 @@ var logger = new (winston.Logger)({
 var roboteq = require('./roboteq.js');
 var osc = require('osc');
 var express = require('express');
+var _ = require('lodash');
 var app = express();
 
 var revolutionsPerMeter = 16.818; // 14.16meters from floor at 120,000 = ~8611 counts per meter
@@ -170,7 +171,7 @@ function safeApplyTransition(transitionName) {
         logger.warn('Ignoring unsafe transition: ' + transitionName);      
       }
     })
-    if(transitionName == 'shutdown') {
+    if(transitionName === 'shutdown') {
       active = false;
     }
   }
@@ -180,6 +181,21 @@ app.get('/roboteq/transition', function(req, res) {
   var name = req.query.name;
   logger.verbose('/roboteq/transition to ' + name);
   safeApplyTransition(name);
+  res.sendStatus(200);
+})
+
+app.get('/roboteq/automatic/clear', function(req, res) {
+  roboteq.clearBufferHistory();
+  res.sendStatus(200);
+})
+
+app.get('/roboteq/automatic/start', function(req, res) {
+  roboteq.startAutomaticSending(500);
+  res.sendStatus(200);
+})
+
+app.get('/roboteq/automatic/stop', function(req, res) {
+  roboteq.stopAutomaticSending();
   res.sendStatus(200);
 })
 
@@ -238,7 +254,7 @@ app.get('/roboteq/get/destinationReached', function(req, res) {
 })
 
 app.get('/roboteq/set/echo', function(req, res) {
-  var enable = (req.query.echo == 'true');
+  var enable = (req.query.echo === 'true');
   roboteq.setEcho(enable);
   res.sendStatus(200);
 })
@@ -271,4 +287,15 @@ app.get('/oculus/screenshot', function (req, res) {
   logger.verbose('/screenshot');
   sendOsc('/screenshot');
   res.sendStatus(200);
+})
+
+app.get('/logs', function (req, res) {
+  logger.query({limit: req.query.limit || 100}, function (err, results) {
+    if (err) console.log(err);
+    var all = _.where(results.file, {'message': req.query.message});
+    res.set('Content-type', 'text/csv');
+    res.send('time\t' + req.query.field + '\n' + all.map(function (log) {
+      return [log.timestamp, log[req.query.field]].join('\t');
+    }).join('\n'));
+  });
 })
