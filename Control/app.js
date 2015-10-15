@@ -21,7 +21,7 @@ var app = express();
 
 var revolutionsPerMeter = 16.818; // 14.16meters from floor at 120,000 = ~8611 counts per meter
 var encoderResolution = 256;
-var minimumVoltage = 23;
+var minimumVoltage = 22;
 var countsPerMeter = revolutionsPerMeter * encoderResolution
 var nudgeAmount = 0.10;
 var safeDistance = 0.05;
@@ -162,9 +162,6 @@ function getSafeTransitions(cb) {
 var active = true;
 function safeApplyTransition(transitionName) {
   if(active) {
-    if(transitionName == 'shutdown') {
-      active = false;
-    }
     getSafeTransitions(function(safe) {
       if(safe.indexOf(transitionName) > -1) {
         logger.verbose('Applying safe transition: ' + transitionName);
@@ -173,6 +170,9 @@ function safeApplyTransition(transitionName) {
         logger.warn('Ignoring unsafe transition: ' + transitionName);      
       }
     })
+    if(transitionName == 'shutdown') {
+      active = false;
+    }
   }
 }
 
