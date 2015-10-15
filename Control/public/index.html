@@ -31,15 +31,14 @@ label {
 <div class="row">
 	<div class="col-md-2" style="width: 300px">
 		<div class="btn-group btn-group-lg" role="group">
-			<button id="top" type="button" class="btn btn-danger btn-lg scene">top</button>
-			<button id="bottom" type="button" class="btn btn-danger btn-lg scene">bottom</button>
+			<button id="top" type="button" class="btn btn-default btn-lg scene">top</button>
+			<button id="bottom" type="button" class="btn btn-default btn-lg scene">bottom</button>
 		</div>
 		<div><button id="scene1" type="button" class="btn btn-default btn-lg btn-block scene">top of box</button></div>
-		<div><button id="scene2" type="button" class="btn btn-default btn-lg btn-block scene">center of box</button></div>
-		<div><button id="scene3" type="button" class="btn btn-default btn-lg btn-block scene">bottom of box</button></div>
-		<div><button id="scene4" type="button" class="btn btn-default btn-lg btn-block scene">down to beneath box</button></div>
-		<div><button id="scene5" type="button" class="btn btn-default btn-lg btn-block scene">drop</button></div>
-		<div><button id="scene6" type="button" class="btn btn-default btn-lg btn-block scene">up to beneath box</button></div>
+		<div><button id="scene2" type="button" class="btn btn-default btn-lg btn-block scene">through box</button></div>
+		<div><button id="scene3" type="button" class="btn btn-default btn-lg btn-block scene">down to beneath box</button></div>
+		<div><button id="scene4" type="button" class="btn btn-default btn-lg btn-block scene">drop</button></div>
+		<div><button id="scene5" type="button" class="btn btn-default btn-lg btn-block scene">up to beneath box</button></div>
 		<div id='roboteq-status'>Loading...</div>
 		<div class="input-group"><label><input type="checkbox" id="debug-checkbox"> Enable Debug</label></div>
 		<div id="debug-controls">
@@ -105,12 +104,12 @@ function checkStatus() {
 	})
 	$.get('transitions/safe', function (res, err) {
 		$('.scene').each(function (i, e) {
+			$(e).removeClass('btn-warning');
 			if(res.indexOf(e.id) > -1) {
 				$(e).addClass('btn-primary');
 				$(e).prop('disabled', false);
 			} else {
 				$(e).removeClass('btn-primary');
-				$(e).removeClass('btn-warning');
 				$(e).prop('disabled', true);
 			}
 		})
@@ -134,14 +133,13 @@ $(function() {
 			$('#debug-controls').hide();
 		}
 	})
-	$('#top').click(function() { $.get('roboteq/transition', {name: 'top'}); })
-	$('#bottom').click(function() { $.get('roboteq/transition', {name: 'bottom'}) })
+	$('#top').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'top'}); })
+	$('#bottom').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'bottom'}) })
 	$('#scene1').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene1'}) })
 	$('#scene2').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene2'}) })
 	$('#scene3').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene3'}) })
 	$('#scene4').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene4'}) })
 	$('#scene5').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene5'}) })
-	$('#scene6').click(function() { $(this).addClass('btn-warning'); $.get('roboteq/transition', {name: 'scene6'}) })
 	$('#screenshot').click(function() { $.get('oculus/screenshot') })
 	$('#rotate-left-hard').click(function() { $.get('oculus/lookAngle/add', {value: -25}); })
 	$('#rotate-left').click(function() { $.get('oculus/lookAngle/add', {value: -2.5}); })

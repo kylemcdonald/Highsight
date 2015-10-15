@@ -26,10 +26,10 @@ var countsPerMeter = revolutionsPerMeter * encoderResolution
 var nudgeAmount = 0.10;
 var safeDistance = 0.05;
 var returnToBottomDuration = 1000 * 60 * 5; // time after last transition to return to bottom
-var boxs = 10;
+var boxs = 30;
 var boxac = 100;
 var boxdc = 100;
-var slows = 100;
+var slows = 150;
 var slowac = 1000;
 var slowdc = 1000;
 var fasts = 1300;
@@ -50,7 +50,7 @@ var positions = {
   'boxview': 9.5,
   'boxbottom': 8.9,
   'openair': 8.5,
-  'myself': 2.0,
+  'myself': 1.5,
   'bottom': 0.1
 };
 
@@ -65,11 +65,10 @@ var transitions = {
   'top': {end: 'top'},
   'bottom': {end: 'bottom'},
   'scene1': {start: 'top', end: 'boxtop'},
-  'scene2': {start: 'boxtop', end: 'boxview', s: boxs, ac: boxac, dc: boxdc},
-  'scene3': {start: 'boxview', end: 'boxbottom', s: boxs, ac: boxac, dc: boxdc},
-  'scene4': {start: 'boxbottom', end: 'openair'},
-  'scene5': {start: 'openair', end: 'myself', s: fasts, ac: fastac, dc: fastdc}, // should be fast
-  'scene6': {start: 'myself', end: 'openair'}, // should be slow
+  'scene2': {start: 'boxtop', end: 'boxbottom', s: boxs, ac: boxac, dc: boxdc},
+  'scene3': {start: 'boxbottom', end: 'openair'},
+  'scene4': {start: 'openair', end: 'myself', s: fasts, ac: fastac, dc: fastdc}, // should be fast
+  'scene5': {start: 'myself', end: 'openair'}, // should be slow
 };
 
 app.use(express.static(__dirname + '/public'));
