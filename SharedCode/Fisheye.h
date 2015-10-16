@@ -5,9 +5,9 @@
 class Fisheye {
 public:
     ofMesh mesh, sampleMesh;
-    ofVec2f offset = ofVec2f(960, 530);
+    ofVec2f offset = ofVec2f(966, 536);
     float width = 1920, height = 1080;
-    float radius = 530;
+    float radius = 520;
     float fov = 180;
     int radiusResolution = 24;
     int thetaResolution = 92;

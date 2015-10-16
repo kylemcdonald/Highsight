@@ -7,7 +7,7 @@ void ofApp::setup() {
     index = 0;
     
     gui.setup();
-    float baseResolution = 720;
+    float baseResolution = 1080;
     float referenceResolution = 1080;
     float scaleResolution = baseResolution / referenceResolution;
     gui.add(offset.set("Offset", scaleResolution * ofVec2f(960, 530), ofVec2f(0, 0), scaleResolution * ofVec2f(1920, 1080)));
@@ -36,8 +36,12 @@ void ofApp::draw() {
     ofBackground(0);
     ofPushMatrix();
     ofScale(.5, .5);
-    if(img.isAllocated()) {
-        img.draw(0, 0);
+    if(useVideo) {
+        video.draw(0, 0);
+    } else {
+        if(img.isAllocated()) {
+            img.draw(0, 0);
+        }
     }
     ofNoFill();
     ofTranslate((ofVec2f) offset);
@@ -89,8 +93,28 @@ void ofApp::keyPressed(int key) {
     } else if(key == '\t') {
         drawGui = !drawGui;
     } else {
-        img.load(dir[index]);
-        img.update();
-        index = (index + 1) % dir.size();
+//        img.load(dir[index]);
+//        img.update();
+//        index = (index + 1) % dir.size();
+    }
+    
+    float nudge = 1;
+    if(key == '=') {
+        radius++;
+    }
+    if(key == '-') {
+        radius--;
+    }
+    if(key == OF_KEY_RIGHT) {
+        offset = ofVec2f(offset->x + nudge, offset->y);
+    }
+    if(key == OF_KEY_LEFT) {
+        offset = ofVec2f(offset->x - nudge, offset->y);
+    }
+    if(key == OF_KEY_UP) {
+        offset = ofVec2f(offset->x, offset->y - nudge);
+    }
+    if(key == OF_KEY_DOWN) {
+        offset = ofVec2f(offset->x, offset->y + nudge);
     }
 }
