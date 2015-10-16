@@ -51,21 +51,21 @@ var listeners = { };
 var recentData = { };
 function addListener(name, cb) {
   if(!(name in listeners)) {
-    console.log('creating listener array for ' + name);
+    // console.log('creating listener array for ' + name);
     listeners[name] = [ ];
   }
-  console.log('adding listener for ' + name);
+  // console.log('adding listener for ' + name);
   listeners[name].push(cb);
 }
 function callListeners(name, value) {
   recentData[name] = value;
   if(name in listeners) {
     listeners[name].forEach(function (cb) {
-      console.log('calling listener  ' + name + ' with ' + value)
+      // console.log('calling listener  ' + name + ' with ' + value)
       cb(value);
     })
   } else {
-    console.log('no listeners registered for ' + name);    
+    // console.log('no listeners registered for ' + name);    
   }
 }
 
@@ -73,17 +73,17 @@ function callListeners(name, value) {
 var callbacks = { };
 function addCallback(name, cb) {
   if(!(name in callbacks)) {
-    console.log('creating callback array for ' + name);
+    // console.log('creating callback array for ' + name);
     callbacks[name] = [ ];
   }
-  console.log('adding callback for ' + name);
+  // console.log('adding callback for ' + name);
   callbacks[name].push(cb);
 }
 function callCallbacks(name, value) {
   if(name in callbacks) {
     var cbs = callbacks[name];
     while(cbs.length > 0) {
-      console.log('calling callback ' + name + ' with ' + value)
+      // console.log('calling callback ' + name + ' with ' + value + ':');
       cbs.pop()(value);
     }
   } else {
@@ -133,7 +133,8 @@ exports.connect = function(params) {
         reconnect();
       } else {
         updateSerialStatus('connected');
-        exports.setEcho(false);
+        // exports.setEcho(false);
+        exports.setEcho(true);
       }
     });
   })
@@ -155,9 +156,8 @@ function write(command, cb) {
     var name = command.substring(1).split(' ')[0];
     addCallback(name, cb);
   }
-  // console.log('write: ' + command);
   serial.write(command, function(err) {
-    if(err) console.log('err ' + err);    
+    if(err) console.log('err ' + err);
   })
 }
 
@@ -217,11 +217,15 @@ exports.setPosition = function(position) {
 }
 exports.setPositionRelative = function(distance) {
   if(unsafe(distance)) return;
-  exports.setPosition(result + Number(distance));
+  exports.getPosition(function(currentPosition) {
+    if(unsafe(currentPosition)) return;
+    var targetPosition = currentPosition + Number(distance);
+    exports.setPosition(targetPosition);
+  })
 }
 exports.startAutomaticSending = function(interval) {
   if(unsafe(interval)) return;
-  interval = clamp(interval, 200, 10000); // max 5hz
+  interval = clamp(interval, 1, 10000); // max 5hz
   exports.command('# ' + interval);
 }
 exports.stopAutomaticSending = function() {

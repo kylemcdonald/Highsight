@@ -31,8 +31,8 @@ var boxs = 30;
 var boxac = 100;
 var boxdc = 100;
 var slows = 150;
-var slowac = 1000;
-var slowdc = 1000;
+var slowac = 500;
+var slowdc = 500;
 var fasts = 1300;
 var fastac = 15000;
 var fastdc = 12000;
@@ -46,12 +46,11 @@ function encoderUnitsToMeters(encoderUnits) {
 }
 
 var positions = {
-  'top': 11.5,
-  'boxtop': 10.05,
-  'boxview': 9.5,
-  'boxbottom': 8.9,
-  'openair': 8.5,
-  'myself': 1.5,
+  'top': 11.40,
+  'boxtop': 9.8,
+  'boxbottom': 8.8,
+  'openair': 8.4,
+  'myself': 1.4,
   'bottom': 0.1
 };
 
@@ -89,7 +88,7 @@ var server = app.listen(process.env.PORT || 3000, function () {
 // could pass encoder resolution here?
 roboteq.connect({
   // these are limited internally as an error-check
-  top: metersToEncoderUnits(11.5),
+  top: metersToEncoderUnits(11.40),
   bottom: metersToEncoderUnits(0.1),
   speedLimit: 1400,
   accelerationLimit: 15000,
@@ -103,19 +102,19 @@ app.get('/roboteq/open', function(req, res) {
   })
 })
 
-setInterval(function() {
-  if(active) {
-    roboteq.getVolts(function(volts) {
-      if(volts) {
-        logger.debug('getVolts', {volts: volts});
-        if(volts < minimumVoltage) {
-          logger.warn('Past minimum voltage, shutting down.');
-          safeApplyTransition('shutdown');
-        }
-      }
-    })
-  }
-}, 1000);
+// setInterval(function() {
+//   if(active) {
+//     roboteq.getVolts(function(volts) {
+//       if(volts) {
+//         logger.debug('getVolts', {volts: volts});
+//         if(volts < minimumVoltage) {
+//           logger.warn('Past minimum voltage, shutting down.');
+//           safeApplyTransition('shutdown');
+//         }
+//       }
+//     })
+//   }
+// }, 1000);
 
 var returnToBottomTimeout;
 function applyTransition(transitionName) {
@@ -136,10 +135,12 @@ function applyTransition(transitionName) {
 
 function getSafeTransitions(cb) {
   if(!active) {
-    return [];
+    cb([]);
   }
   roboteq.getPosition(function(positionEncoder) {
-    if(positionEncoder) {
+    if(positionEncoder === undefined) {
+      cb([]);
+    } else {
       var positionMeters = encoderUnitsToMeters(positionEncoder);
       logger.debug('getPosition', {positionMeters: positionMeters});
       var safeTransitions = [];
@@ -190,7 +191,7 @@ app.get('/roboteq/automatic/clear', function(req, res) {
 })
 
 app.get('/roboteq/automatic/start', function(req, res) {
-  roboteq.startAutomaticSending(500);
+  roboteq.startAutomaticSending(200);
   res.sendStatus(200);
 })
 

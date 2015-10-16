@@ -15,7 +15,7 @@ body, html {
 	color: white;
 }
 div {
-	padding: 1em;
+	padding: .5em;
 }
 #debug-controls {
 	display: none;
@@ -49,13 +49,11 @@ label {
 				<button id="rotate-right" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-forward" aria-hidden="true"></span></button>
 				<button id="rotate-right-hard" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-fast-forward" aria-hidden="true"></span></button>
 			</div>
-			<!--
 			<div class="input-group">
 				<p>Nudge</p>
 				<button id="nudge-up" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span></button>
 				<button id="nudge-down" type="button" class="btn btn-default btn-lg"><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></button>
 			</div>
-			-->
 			<div><button id="screenshot" type="button" class="btn btn-default btn-lg btn-block">Screenshot</button></div>
 			<div class="input-group">
 				<input type="text" class="form-control" placeholder="0" id="position">
@@ -98,21 +96,33 @@ label {
 </div>
 
 <script>
+$.ajaxSetup({timeout: 2000});
 function checkStatus() {
 	$.get('roboteq/open', function (res, err) {
-		$('#roboteq-status').text(res.status ? 'Roboteq is ' + res.status + '.' : 'Server is down.');
+		$('#roboteq-status').text(res.status ? 'Roboteq is ' + res.status + '.' : 'Server returned an error.');
+		if(res.status) {
+			$.get('transitions/safe', function (res, err) {
+				$('.scene').each(function (i, e) {
+					$(e).removeClass('btn-warning');
+					if(res.indexOf(e.id) > -1) {
+						$(e).addClass('btn-primary');
+						$(e).prop('disabled', false);
+					} else {
+						$(e).removeClass('btn-primary');
+						$(e).prop('disabled', true);
+					}
+				})
+				setTimeout(checkStatus, 1000);
+			})
+			.fail(function() {
+				$('#roboteq-status').text('Server is down (transitions/safe).');
+				setTimeout(checkStatus, 2000);
+			})
+		}
 	})
-	$.get('transitions/safe', function (res, err) {
-		$('.scene').each(function (i, e) {
-			$(e).removeClass('btn-warning');
-			if(res.indexOf(e.id) > -1) {
-				$(e).addClass('btn-primary');
-				$(e).prop('disabled', false);
-			} else {
-				$(e).removeClass('btn-primary');
-				$(e).prop('disabled', true);
-			}
-		})
+	.fail(function() {
+		$('#roboteq-status').text('Server is down (roboteq/open).');
+		setTimeout(checkStatus, 2000);
 	})
 }
 var upDuration = 14000;
@@ -125,7 +135,6 @@ function repeat() {
 }
 $(function() {
 	checkStatus();
-	setInterval(checkStatus, 1000);
 	$('#debug-checkbox').click(function() {
 		if ($(this).prop('checked')) {
 			$('#debug-controls').show();
