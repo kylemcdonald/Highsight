@@ -120,6 +120,7 @@ public:
         if(key == 'f') {
             ofToggleFullscreen();
         }
+        fisheye.keyPressed(key);
 	}
 };
 
