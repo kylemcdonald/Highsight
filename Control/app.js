@@ -3,7 +3,6 @@
 // realtime preview from OF to iPad
 // shakiness sensor in OF?
 // make nodemon start without password?
-// battery replacement notifcation
 
 var winston = require('winston');
 var logger = new (winston.Logger)({
@@ -26,6 +25,7 @@ var countsPerMeter = revolutionsPerMeter * encoderResolution
 var nudgeAmount = 0.10;
 var safeDistance = 0.05;
 var returnToBottomDuration = 1000 * 60 * 5; // time after last transition to return to bottom
+var maximumLatency = 100; // milliseconds
 var boxs = 30;
 var boxac = 100;
 var boxdc = 100;
@@ -49,7 +49,7 @@ var positions = {
   'boxtop': 9.8,
   'boxbottom': 8.8,
   'openair': 8.4,
-  'myself': 1.4,
+  'end': 0.3,
   'bottom': 0.1
 };
 
@@ -66,8 +66,8 @@ var transitions = {
   'scene1': {start: 'top', end: 'boxtop'},
   'scene2': {start: 'boxtop', end: 'boxbottom', s: boxs, ac: boxac, dc: boxdc},
   'scene3': {start: 'boxbottom', end: 'openair'},
-  'scene4': {start: 'openair', end: 'myself', s: fasts, ac: fastac, dc: fastdc}, // should be fast
-  'scene5': {start: 'myself', end: 'openair'}, // should be slow
+  'scene4': {start: 'openair', end: 'end', s: fasts, ac: fastac, dc: fastdc}, // should be fast
+  'scene5': {start: 'end', end: 'openair'}, // should be slow
 };
 
 app.use(express.static(__dirname + '/public'));
@@ -138,11 +138,10 @@ function applyTransition(transitionName) {
   }, returnToBottomDuration);
 }
 
-// possible error state where the data from roboteq is stale
-// but we still believe it
 function getSafeTransitions() {
+  var latency = roboteq.getLatency();
   var positionEncoder = roboteq.getPosition();
-  if(!active || positionEncoder === undefined) {
+  if(!active || latency > maximumLatency || positionEncoder === undefined) {
     return [];
   }
   var positionMeters = encoderUnitsToMeters(positionEncoder);

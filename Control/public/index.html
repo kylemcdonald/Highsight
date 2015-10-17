@@ -145,14 +145,6 @@ function checkStatus() {
 		setTimeout(checkStatus, 2000);
 	})
 }
-var upDuration = 14000;
-var downDuration = 4000;
-var repeatDuration = upDuration + downDuration;
-var repeatInterval;
-function repeat() {
-	setTimeout(function() { $.get('roboteq/go/up'); }, 0);
-	setTimeout(function() { $.get('roboteq/go/down'); }, upDuration);
-}
 $(function() {
 	checkStatus();
 	$('#debug-checkbox').click(function() {

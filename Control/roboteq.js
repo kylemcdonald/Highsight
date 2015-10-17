@@ -24,7 +24,7 @@ function clamp(x, low, high) {
 }
 
 function emptyObject(x) {
-  return Object.keys(x).length;
+  return Object.keys(x).length == 0;
 }
 
 function getComName(cb) {
@@ -101,11 +101,13 @@ function addDefaultListeners() {
     var ampsMultiplier = 1. / 10.;
     // also called "encoder counter absolute"
     addListener('C', function(value) {
-      cache.position = Number(value);
+      var parts = value.split(':');
+      cache.position = Number(parts[0]);
     })
     // units are .1 * RPM / s, called "set velocity" in manual
     addListener('S', function(value) {
-      cache.speed = Number(value);
+      var parts = value.split(':');
+      cache.speed = Number(parts[0]);
     })
     // returns voltage * 10 : main battery voltage * 10 : v5out on dsub in millivolts, see p 186
     addListener('V', function(value) {
@@ -116,15 +118,18 @@ function addDefaultListeners() {
     })
     // returns units of amps * 10, p 173
     addListener('A', function(value) {
-      cache.motorAmps = Number(value) * ampsMultiplier;
+      var parts = value.split(':');
+      cache.motorAmps = Number(parts[0]) * ampsMultiplier;
     })
     // returns units of amps * 10, p 175
     addListener('BA', function(value) {
-      cache.batteryAmps = Number(value) * ampsMultiplier;
+      var parts = value.split(':');
+      cache.batteryAmps = Number(parts[0]) * ampsMultiplier;
     })
     // p 179, p 104
     addListener('DR', function(value) {
-      cache.destinationReached = Number(value);
+      var parts = value.split(':');
+      cache.destinationReached = Number(parts[0]);
     })
   }
 }
@@ -134,12 +139,12 @@ function startupSequence() {
   // automatic sending is described on p 188 and 189
   exports.command('#'); // stop automatic sending
   exports.command('# C'); // clear command history
-  exports.command('?C 1'); // encoder counter position
-  exports.command('?S 1'); // speed
+  exports.command('?C'); // encoder counter position
+  exports.command('?S'); // speed
   exports.command('?V'); // volts
-  exports.command('?A 1'); // motor amps
-  exports.command('?BA 1'); // battery amps
-  exports.command('?DR 1'); // destination reached
+  exports.command('?A'); // motor amps
+  exports.command('?BA'); // battery amps
+  exports.command('?DR'); // destination reached
   exports.command('# 10'); // start automatic sending
 }
 
@@ -186,6 +191,7 @@ exports.serialStatus = function() {
 }
 
 exports.command = function(command) {
+  // console.log('write: ' + command);
   if(!exports.isOpen()) {
     // console.log('Ignored command: ' + command);
     return;
@@ -240,6 +246,7 @@ exports.getLatency = function() {
 }
 
 // get internal cached state: returns parsed data
+exports.getCache = function() { return cache }
 exports.getPosition = function() { return cache.position }
 exports.getSpeed = function() { return cache.speed }
 exports.getMotorVolts = function() { return cache.motorVolts }
