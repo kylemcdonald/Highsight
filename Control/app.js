@@ -104,15 +104,14 @@ app.get('/roboteq/open', function(req, res) {
 
 // setInterval(function() {
 //   if(active) {
-//     roboteq.getVolts(function(volts) {
-//       if(volts) {
-//         logger.debug('getVolts', {volts: volts});
-//         if(volts < minimumVoltage) {
-//           logger.warn('Past minimum voltage, shutting down.');
-//           safeApplyTransition('shutdown');
-//         }
+//     var volts = roboteq.getVolts();
+//     if(volts) {
+//       logger.debug('getVolts', {volts: volts});
+//       if(volts < minimumVoltage) {
+//         logger.warn('Past minimum voltage, shutting down.');
+//         safeApplyTransition('shutdown');
 //       }
-//     })
+//     }
 //   }
 // }, 1000);
 
@@ -133,48 +132,42 @@ function applyTransition(transitionName) {
   }, returnToBottomDuration);
 }
 
-function getSafeTransitions(cb) {
-  if(!active) {
-    cb([]);
+// possible error state where the data from roboteq is stale
+// but we still believe it
+function getSafeTransitions() {
+  var positionEncoder = roboteq.getPosition();
+  if(!active || positionEncoder === undefined) {
+    return [];
   }
-  roboteq.getPosition(function(positionEncoder) {
-    if(positionEncoder === undefined) {
-      cb([]);
-    } else {
-      var positionMeters = encoderUnitsToMeters(positionEncoder);
-      logger.debug('getPosition', {positionMeters: positionMeters});
-      var safeTransitions = [];
-      for(transitionName in transitions) {
-        var transition = transitions[transitionName];
-        var startPositionName = transition.start;
-        if(startPositionName) {
-          var startPositionMeters = positions[startPositionName];
-          if(Math.abs(positionMeters - startPositionMeters) < safeDistance) {
-            safeTransitions.push(transitionName);
-          }
-        } else {
-          safeTransitions.push(transitionName);
-        }
+  var positionMeters = encoderUnitsToMeters(positionEncoder);
+  logger.debug('getPosition', {positionMeters: positionMeters});
+  var safeTransitions = [];
+  for(transitionName in transitions) {
+    var transition = transitions[transitionName];
+    var startPositionName = transition.start;
+    if(startPositionName) {
+      var startPositionMeters = positions[startPositionName];
+      if(Math.abs(positionMeters - startPositionMeters) < safeDistance) {
+        safeTransitions.push(transitionName);
       }
-      cb(safeTransitions);
+    } else {
+      safeTransitions.push(transitionName);
     }
-  })
+  }
+  return safeTransitions;
 }
 
 var active = true;
 function safeApplyTransition(transitionName) {
-  if(active) {
-    getSafeTransitions(function(safe) {
-      if(safe.indexOf(transitionName) > -1) {
-        logger.verbose('Applying safe transition: ' + transitionName);
-        applyTransition(transitionName);
-      } else {
-        logger.warn('Ignoring unsafe transition: ' + transitionName);      
-      }
-    })
-    if(transitionName === 'shutdown') {
-      active = false;
-    }
+  var safe = getSafeTransitions();
+  if(safe.indexOf(transitionName) > -1) {
+    logger.verbose('Applying safe transition: ' + transitionName);
+    applyTransition(transitionName);
+  } else {
+    logger.warn('Ignoring unsafe transition: ' + transitionName);      
+  }
+  if(transitionName === 'shutdown') {
+    active = false;
   }
 }
 
@@ -191,7 +184,7 @@ app.get('/roboteq/automatic/clear', function(req, res) {
 })
 
 app.get('/roboteq/automatic/start', function(req, res) {
-  roboteq.startAutomaticSending(200);
+  roboteq.startAutomaticSending(10);
   res.sendStatus(200);
 })
 
@@ -218,40 +211,39 @@ app.get('/roboteq/nudge/down', function(req, res) {
   res.sendStatus(200);
 })
 
+app.get('/roboteq/get/latency', function(req, res) {
+  var result = roboteq.getLatency();
+  res.json({'ms': result});
+})
+
 app.get('/roboteq/get/speed', function(req, res) {
-  roboteq.getSpeed(function(result) {
-    res.json({'speed': result});
-  })
+  var result = roboteq.getSpeed();
+  res.json({'speed': result});
 })
 
 app.get('/roboteq/get/position', function(req, res) {
-  roboteq.getPosition(function(result) {
-    res.json({'position': result, 'meters': encoderUnitsToMeters(result)});
-  })
+  var result = roboteq.getPosition();
+  res.json({'position': result, 'meters': encoderUnitsToMeters(result)});
 })
 
-app.get('/roboteq/get/volts', function(req, res) {
-  roboteq.getVolts(function(result) {
-    res.json({'volts': result});
-  })
+app.get('/roboteq/get/motor/volts', function(req, res) {
+  var result = roboteq.getMotorVolts();
+  res.json({'volts': result});
 })
 
 app.get('/roboteq/get/motor/amps', function(req, res) {
-  roboteq.getMotorAmps(function(result) {
-    res.json({'amps': result});
-  })
+  var result = roboteq.getMotorAmps();
+  res.json({'amps': result});
 })
 
 app.get('/roboteq/get/battery/amps', function(req, res) {
-  roboteq.getBatteryAmps(function(result) {
-    res.json({'amps': result});
-  })
+  var result = roboteq.getBatteryAmps();
+  res.json({'amps': result});
 })
 
 app.get('/roboteq/get/destinationReached', function(req, res) {
-  roboteq.getDestinationReached(function(result) {
-    res.json({'destinationReached': result});
-  })
+  var result = roboteq.getDestinationReached();
+  res.json({'destinationReached': result});
 })
 
 app.get('/roboteq/set/echo', function(req, res) {
@@ -261,9 +253,8 @@ app.get('/roboteq/set/echo', function(req, res) {
 })
 
 app.get('/transitions/safe', function(req, res) {
-  getSafeTransitions(function(safeTransitions) {
-    res.json(safeTransitions);
-  })
+  var safeTransitions = getSafeTransitions();
+  res.json(safeTransitions);
 })
 
 app.get('/transitions/all', function(req, res) {

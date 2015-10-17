@@ -56,6 +56,12 @@ label {
 			</div>
 			<div><button id="screenshot" type="button" class="btn btn-default btn-lg btn-block">Screenshot</button></div>
 			<div class="input-group">
+				<input type="text" class="form-control" placeholder="0" id="latency">
+				<span class="input-group-btn">
+					<button id="get-latency" type="button" class="btn btn-default">Get Latency</button>
+				</span>
+			</div>
+			<div class="input-group">
 				<input type="text" class="form-control" placeholder="0" id="position">
 				<span class="input-group-btn">
 					<button id="get-position" type="button" class="btn btn-default">Get Position</button>
@@ -74,9 +80,9 @@ label {
 				</span>
 			</div>
 			<div class="input-group">
-				<input type="text" class="form-control" placeholder="0" id="volts">
+				<input type="text" class="form-control" placeholder="0" id="motor-volts">
 				<span class="input-group-btn">
-					<button id="get-volts" type="button" class="btn btn-default">Get Volts</button>
+					<button id="get-motor-volts" type="button" class="btn btn-default">Get Motor Volts</button>
 				</span>
 			</div>
 			<div class="input-group">
@@ -156,6 +162,11 @@ $(function() {
 	$('#rotate-right-hard').click(function() { $.get('oculus/lookAngle/add', {value: +25}); })
 	$('#nudge-up').click(function() { $.get('roboteq/nudge/up'); })
 	$('#nudge-down').click(function() { $.get('roboteq/nudge/down'); })
+	$('#get-latency').click(function() {
+		$.get('roboteq/get/latency', function(res, err) {
+			$('#latency').val(res.ms);
+		});
+	});
 	$('#get-position').click(function() {
 		$.get('roboteq/get/position', function(res, err) {
 			$('#position').val(res.position);
@@ -171,9 +182,9 @@ $(function() {
 			$('#speed').val(res.speed);
 		});
 	});
-	$('#get-volts').click(function() {
-		$.get('roboteq/get/volts', function(res, err) {
-			$('#volts').val(res.volts);
+	$('#get-motor-volts').click(function() {
+		$.get('roboteq/get/motor/volts', function(res, err) {
+			$('#motor-volts').val(res.volts);
 		});
 	});
 	$('#get-battery-amps').click(function() {

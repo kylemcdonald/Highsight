@@ -1,3 +1,12 @@
+// based on:
+// http://www.roboteq.com/index.php/docman/motor-controllers-documents-and-files/documentation/user-manual/7-nextgen-controllers-user-manual/file
+// general notes (p 115):
+// - commands are not case sensitive (but always returned as capitalized)
+// - commands are terminated by carriage return (hex 0x0d, '\r')
+// - controller will echo every command it receives (unless this is disabled)
+// - for commands where no reply is expected, it will return a '+' character
+// - for bad commands, it will return a '-' character
+
 var serialport = require('serialport');
 
 function unsafe(x) {
@@ -12,6 +21,10 @@ function clamp(x, low, high) {
   if(x < low) return low;
   if(x > high) return high;
   return x;
+}
+
+function emptyObject(x) {
+  return Object.keys(x).length;
 }
 
 function getComName(cb) {
@@ -33,22 +46,17 @@ function getComName(cb) {
 var config = { };
 var serial;
 var serialStatus = 'initializing';
-function updateSerialStatus(status) {
+function setSerialStatus(status) {
   if(status !== serialStatus) {
     console.log('Roboteq is ' + status);
   }
   serialStatus = status;
 }
 
-// step 1: only respond to callbacks with the correct event
-// step 2: add recentData that keeps track of most recent replies
-// step 3: ability to add listeners that update when new data is available
-// step 4: switch from query-based to cache-based requests and regular polling
-// step 5: try to re-enable echo
-
 // listeners are called every time
 var listeners = { };
-var recentData = { };
+var cache = { };
+var lastUpdate;
 function addListener(name, cb) {
   if(!(name in listeners)) {
     // console.log('creating listener array for ' + name);
@@ -58,7 +66,6 @@ function addListener(name, cb) {
   listeners[name].push(cb);
 }
 function callListeners(name, value) {
-  recentData[name] = value;
   if(name in listeners) {
     listeners[name].forEach(function (cb) {
       // console.log('calling listener  ' + name + ' with ' + value)
@@ -66,28 +73,6 @@ function callListeners(name, value) {
     })
   } else {
     // console.log('no listeners registered for ' + name);    
-  }
-}
-
-// callbacks are called once and deleted
-var callbacks = { };
-function addCallback(name, cb) {
-  if(!(name in callbacks)) {
-    // console.log('creating callback array for ' + name);
-    callbacks[name] = [ ];
-  }
-  // console.log('adding callback for ' + name);
-  callbacks[name].push(cb);
-}
-function callCallbacks(name, value) {
-  if(name in callbacks) {
-    var cbs = callbacks[name];
-    while(cbs.length > 0) {
-      // console.log('calling callback ' + name + ' with ' + value + ':');
-      cbs.pop()(value);
-    }
-  } else {
-    console.log('no callbacks registered for ' + name);
   }
 }
 
@@ -103,18 +88,68 @@ function dataCallback(data) {
   var parts = data.split('=');
   if(parts.length > 1) {
     var name = parts[0];
-    var value = Number(parts[1]); 
-    callCallbacks(name, value);
+    var value = parts[1];
+    lastUpdate = new Date();
     callListeners(name, value);
   }
 }
 
+function addDefaultListeners() {
+  if(emptyObject(listeners)) {
+    var voltsMultiplier = 1. / 10.;
+    var millivoltsMultiplier = 1. / 1000.;
+    var ampsMultiplier = 1. / 10.;
+    // also called "encoder counter absolute"
+    addListener('C', function(value) {
+      cache.position = Number(value);
+    })
+    // units are .1 * RPM / s, called "set velocity" in manual
+    addListener('S', function(value) {
+      cache.speed = Number(value);
+    })
+    // returns voltage * 10 : main battery voltage * 10 : v5out on dsub in millivolts, see p 186
+    addListener('V', function(value) {
+      var parts = value.split(':');
+      cache.internalVolts = Number(parts[0]) * voltsMultiplier;
+      cache.motorVolts = Number(parts[1]) * voltsMultiplier;
+      cache.dsubVolts = Number(parts[2]) * millivoltsMultiplier;
+    })
+    // returns units of amps * 10, p 173
+    addListener('A', function(value) {
+      cache.motorAmps = Number(value) * ampsMultiplier;
+    })
+    // returns units of amps * 10, p 175
+    addListener('BA', function(value) {
+      cache.batteryAmps = Number(value) * ampsMultiplier;
+    })
+    // p 179, p 104
+    addListener('DR', function(value) {
+      cache.destinationReached = Number(value);
+    })
+  }
+}
+
+function startupSequence() {
+  exports.setEcho(false);
+  // automatic sending is described on p 188 and 189
+  exports.command('#'); // stop automatic sending
+  exports.command('# C'); // clear command history
+  exports.command('?C 1'); // encoder counter position
+  exports.command('?S 1'); // speed
+  exports.command('?V'); // volts
+  exports.command('?A 1'); // motor amps
+  exports.command('?BA 1'); // battery amps
+  exports.command('?DR 1'); // destination reached
+  exports.command('# 10'); // start automatic sending
+}
+
 exports.connect = function(params) {
+  addDefaultListeners();
   if(params) config = params;
   if(serial && serial.isOpen()) return;
   getComName(function(err, comName) {
     if(err) {
-      updateSerialStatus('not found, searching');
+      setSerialStatus('not found, searching');
       reconnect();
       return;
     }
@@ -122,19 +157,18 @@ exports.connect = function(params) {
       baudrate: 115200,
       parser: serialport.parsers.readline('\r'),
       disconnectedCallback: function() {
-        updateSerialStatus('disconnected, reconnecting');
+        setSerialStatus('disconnected, reconnecting');
         reconnect();
       }
     }, false);
     serial.on('data', dataCallback);
     serial.open(function(err) {
       if(err) {
-        updateSerialStatus('error connecting, reconnecting');
+        setSerialStatus('error connecting, reconnecting');
         reconnect();
       } else {
-        updateSerialStatus('connected');
-        // exports.setEcho(false);
-        exports.setEcho(true);
+        setSerialStatus('connected');
+        startupSequence();
       }
     });
   })
@@ -151,41 +185,16 @@ exports.serialStatus = function() {
   return serialStatus;
 }
 
-function write(command, cb) {
-  if(cb) {
-    var name = command.substring(1).split(' ')[0];
-    addCallback(name, cb);
-  }
-  serial.write(command, function(err) {
-    if(err) console.log('err ' + err);
-  })
-}
-
 exports.command = function(command) {
   if(!exports.isOpen()) {
     // console.log('Ignored command: ' + command);
     return;
   }
-  write(command + '\r');
+  command += '\r';
+  serial.write(command, function(err) {
+    if(err) console.log('serial.write error: ' + err);
+  })
 }
-
-exports.query = function(query, cb) {
-  if(!exports.isOpen()) {
-    // console.log('Ignored query: ' + query);
-    cb();
-    return;
-  }
-  write(query + '\r', cb);
-}
-
-// based on:
-// http://www.roboteq.com/index.php/docman/motor-controllers-documents-and-files/documentation/user-manual/7-nextgen-controllers-user-manual/file
-// general notes (p 115):
-// - commands are not case sensitive (but always returned as capitalized)
-// - commands are terminated by carriage return (hex 0x0d, '\r')
-// - controller will echo every command it receives (unless this is disabled)
-// - for commands where no reply is expected, it will return a '+' character
-// - for bad commands, it will return a '-' character
 
 // set/command
 exports.setEcho = function(enable) {
@@ -196,83 +205,44 @@ exports.setEcho = function(enable) {
   }
 }
 exports.setAcceleration = function(acceleration) {
+  acceleration = Number(acceleration);
   if(unsafe(acceleration)) return;
   acceleration = clamp(acceleration, 0, config.accelerationLimit);
   exports.command('!AC 1 ' + acceleration);
 }
 exports.setDeceleration = function(deceleration) {
+  deceleration = Number(deceleration);
   if(unsafe(deceleration)) return;
   deceleration = clamp(deceleration, 0, config.decelerationLimit);
   exports.command('!DC 1 ' + deceleration);
 }
-exports.setSpeed = function(speed) { // units are .1 * RPM / s, called "set velocity" in manual
+exports.setSpeed = function(speed) {
+  speed = Number(speed);
   if(unsafe(speed)) return;
   speed = clamp(speed, 0, config.speedLimit);
   exports.command('!S 1 ' + speed);
 }
 exports.setPosition = function(position) {
+  position = Number(position);
   if(unsafe(position)) return;
   position = clamp(position, config.bottom, config.top);
   exports.command('!P 1 ' + position);
 }
 exports.setPositionRelative = function(distance) {
+  distance = Number(distance);
   if(unsafe(distance)) return;
-  exports.getPosition(function(currentPosition) {
-    if(unsafe(currentPosition)) return;
-    var targetPosition = currentPosition + Number(distance);
-    exports.setPosition(targetPosition);
-  })
+  var currentPosition = cache.position;
+  if(unsafe(currentPosition)) return;
+  exports.setPosition(currentPosition + distance);
 }
-exports.startAutomaticSending = function(interval) {
-  if(unsafe(interval)) return;
-  interval = clamp(interval, 1, 10000); // max 5hz
-  exports.command('# ' + interval);
-}
-exports.stopAutomaticSending = function() {
-  exports.command('#');
-}
-exports.clearBufferHistory = function() {
-  exports.command('# C');
+exports.getLatency = function() {
+  return lastUpdate ? new Date() - lastUpdate : undefined;
 }
 
-// get/query
-exports.getPosition = function(cb) {
-  exports.query('?C 1', cb); // also called "encoder counter absolute"
-}
-exports.getSpeed = function(cb) { // units are .1 * RPM / s, called "set velocity" in manual
-  exports.query('?S 1', cb);
-}
-// returns voltage * 10 : main battery voltage * 10 : v5out on dsub in millivolts, see p 186
-// ?v 1 returns internal voltage
-// ?v 2 returns motor voltage
-// ?v 3 return 5v on dsub output
-exports.getVolts = function(cb) {
-  exports.query('?V 2', function(volts) {
-    cb(volts / 10.);
-  });
-}
-exports.getMotorAmps = function(cb) { // returns units of amps * 10, p 173
-  exports.query('?A 1', function(amps) {
-    cb(amps / 10.); 
-  });
-}
-exports.getBatteryAmps = function(cb) { // returns units of amps * 10, p 175
-  exports.query('?BA 1', function(amps) {
-    cb(amps / 10.);
-  })
-}
-exports.getDestinationReached = function(cb) { // p 179, p 104
-  exports.query('?DR 1', cb);
-}
-
-// following commands are untested
-exports.getFaults = function(cb) {
-  exports.query('?FF 1', cb); // see p 180 for the meaning of each bit
-}
-exports.getRuntimeStatus = function(cb) {
-  exports.query('?FM 1', cb); // see p 181 for the meaning of each bit
-}
-exports.getStatus = function(cb) {
-  exports.query('?FS 1', cb); // see p 181 for the meaning of each bit
-}
-// see p 188 and 189 for a way to set up the roboteq to automatically return stats
+// get internal cached state: returns parsed data
+exports.getPosition = function() { return cache.position }
+exports.getSpeed = function() { return cache.speed }
+exports.getMotorVolts = function() { return cache.motorVolts }
+exports.getMotorAmps = function() { return cache.motorAmps }
+exports.getBatteryAmps = function() { return cache.batteryAmps }
+exports.getDestinationReached = function() { return cache.destinationReached }
