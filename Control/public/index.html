@@ -7,6 +7,7 @@
 <script type="text/javascript" src="jquery/dist/jquery.min.js"></script>
 <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.min.css">
 <script type="text/javascript" src="bootstrap/dist/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="moment/min/moment.min.js"></script>
 <style>
 body, html {
 	width: 100%;
@@ -24,6 +25,11 @@ label {
 	user-select: none;
 	-webkit-user-select: none;
 }
+.warning {
+	color: #f27;
+	font-weight: bold;
+	cursor: pointer;
+}
 </style>
 </head>
 
@@ -39,7 +45,8 @@ label {
 		<div><button id="scene3" type="button" class="btn btn-default btn-lg btn-block scene">down to beneath box</button></div>
 		<div><button id="scene4" type="button" class="btn btn-default btn-lg btn-block scene">drop</button></div>
 		<div><button id="scene5" type="button" class="btn btn-default btn-lg btn-block scene">up to beneath box</button></div>
-		<div id='roboteq-status'>Loading...</div>
+		<div id='status'>Loading...</div>
+		<div>Battery remaining: <span id='battery-status'>Loading...</span></div>
 		<div class="input-group"><label><input type="checkbox" id="debug-checkbox"> Enable Debug</label></div>
 		<div id="debug-controls">
 			<div class="input-group">
@@ -104,8 +111,15 @@ label {
 <script>
 $.ajaxSetup({timeout: 2000});
 function checkStatus() {
-	$.get('roboteq/open', function (res, err) {
-		$('#roboteq-status').text(res.status ? 'Roboteq is ' + res.status + '.' : 'Server returned an error.');
+	$.get('status', function (res, err) {
+		var duration = moment.duration(res.battery, 'milliseconds');
+		if(duration < moment.duration(30, 'minutes')) {
+			$('#battery-status').addClass('warning');
+		} else {
+			$('#battery-status').removeClass('warning');
+		}
+		$('#battery-status').text(duration.humanize());
+		$('#status').text(res.status ? 'Roboteq is ' + res.status + '.' : 'Server returned an error.');
 		if(res.status) {
 			$.get('transitions/safe', function (res, err) {
 				$('.scene').each(function (i, e) {
@@ -121,13 +135,13 @@ function checkStatus() {
 				setTimeout(checkStatus, 1000);
 			})
 			.fail(function() {
-				$('#roboteq-status').text('Server is down (transitions/safe).');
+				$('#status').text('Server is down (/transitions/safe).');
 				setTimeout(checkStatus, 2000);
 			})
 		}
 	})
 	.fail(function() {
-		$('#roboteq-status').text('Server is down (roboteq/open).');
+		$('#status').text('Server is down (/status).');
 		setTimeout(checkStatus, 2000);
 	})
 }
@@ -197,6 +211,9 @@ $(function() {
 			$('#motor-amps').val(res.amps);
 		});
 	});
+	$('#battery-status').click(function() {
+		$.get('battery/reset');
+	})
 })
 </script>
 

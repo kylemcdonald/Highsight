@@ -1,10 +1,9 @@
 // guideline: pressing any button should always be safe
 
-// if there is ever no current we need to stop.. need to check multiple times though
-// rewriting serial to handle out of order messages (and with echo enabled), chart them in realtime
 // realtime preview from OF to iPad
+// shakiness sensor in OF?
 // make nodemon start without password?
-// return to bottom after enough time has passed
+// battery replacement notifcation
 
 var winston = require('winston');
 var logger = new (winston.Logger)({
@@ -95,11 +94,18 @@ roboteq.connect({
   decelerationLimit: 12000
 });
 
-app.get('/roboteq/open', function(req, res) {
+var batteryReplaceTimer = new Date();
+var batteryLife = 1000 * 60 * 165;
+app.get('/status', function (req, res) {
   res.json({
     'status': active ? roboteq.serialStatus() : 'Low Voltage',
-    'open': roboteq.isOpen()
+    'open': roboteq.isOpen(),
+    'battery': Math.max(0, batteryLife - (new Date() - batteryReplaceTimer))
   })
+})
+app.get('/battery/reset', function (req, res) {
+  batteryReplaceTimer = new Date();
+  res.sendStatus(200);
 })
 
 // setInterval(function() {
