@@ -178,21 +178,6 @@ app.get('/roboteq/transition', function(req, res) {
   res.sendStatus(200);
 })
 
-app.get('/roboteq/automatic/clear', function(req, res) {
-  roboteq.clearBufferHistory();
-  res.sendStatus(200);
-})
-
-app.get('/roboteq/automatic/start', function(req, res) {
-  roboteq.startAutomaticSending(10);
-  res.sendStatus(200);
-})
-
-app.get('/roboteq/automatic/stop', function(req, res) {
-  roboteq.stopAutomaticSending();
-  res.sendStatus(200);
-})
-
 app.get('/roboteq/nudge/up', function(req, res) {
   logger.verbose('/roboteq/nudge/up');
   roboteq.setSpeed(slows);
